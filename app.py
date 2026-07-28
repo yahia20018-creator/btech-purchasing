@@ -2,7 +2,7 @@ import glob
 import pandas as pd
 import streamlit as st
 
-# 1. إعدادات الصفحة وتنسيق الواجهة
+# 1. إعدادات الصفحة وتنسيق الواجهة الاحترافي
 st.set_page_config(
     page_title="Revenue Follow Up Department", page_icon="📈", layout="wide"
 )
@@ -92,8 +92,7 @@ st.markdown(
 st.markdown("---")
 
 
-# دالة ذكية للبحث عن أي ملف إكسل مرفوع في المستودع وقراءته تلقائياً
-@st.cache_data
+# دالة قراءة ملف الإكسل المرفوع مع ضبط الصف الأول كعناوين
 def load_data():
   excel_files = glob.glob("*.xlsx") + glob.glob("*.xls") + glob.glob("*.xlsm")
   if not excel_files:
@@ -101,9 +100,9 @@ def load_data():
         "لم يتم العثور على أي ملف إكسل مرفوع في مستودع GitHub."
     )
 
-  # يختار أول ملف إكسل يلاقيه
   file_name = excel_files[0]
-  df = pd.read_excel(file_name)
+  # header=0 لضمان قراءة الصف الأول كعناوين للأعمدة بشكل صحيح
+  df = pd.read_excel(file_name, header=0)
   df.columns = df.columns.str.strip()
   return df, file_name
 
@@ -114,7 +113,7 @@ try:
       f"✅ تم قراءة الملف بنجاح (`{detected_file}`) وجاهز للاستعلام والاعتماد!"
   )
 
-  # البحث الذكي عن أسماء الأعمدة الأساسية (يدعم إنجليزي وعربي)
+  # البحث الذكي عن أسماء الأعمدة الأساسية
   supplier_col = next(
       (c for c in df.columns if "supplie" in c.lower() or "مورد" in c), None
   )
