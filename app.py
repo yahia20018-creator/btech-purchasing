@@ -77,10 +77,6 @@ st.sidebar.markdown(
     f" **القسم:** Revenue Follow Up"
 )
 st.sidebar.markdown("---")
-st.sidebar.header("📁 إدارة الملفات")
-uploaded_file = st.sidebar.file_uploader(
-    "ارفع شيت المبيعات الشهري (Excel)", type=["xlsx", "xls", "xlsm"]
-)
 
 if st.sidebar.button("🚪 تسجيل خروج"):
   st.session_state.logged_in = False
@@ -94,162 +90,160 @@ st.markdown(
 )
 st.markdown("---")
 
-if uploaded_file is not None:
-  try:
-    df = pd.read_excel(uploaded_file)
-    df.columns = df.columns.str.strip()  # تنظيف أسماء الأعمدة
 
-    # البحث الذكي عن أسماء الأعمدة الأساسية
-    supplier_col = next(
-        (c for c in df.columns if "supplie" in c.lower() or "مورد" in c), None
-    )
-    date_col = next(
-        (c for c in df.columns if "date" in c.lower() or "تاريخ" in c), None
-    )
-    store_col = next(
-        (
-            c
-            for c in df.columns
-            if "store" in c.lower() or "source" in c.lower() or "فرع" in c
-        ),
-        None,
-    )
-    qty_col = next(
-        (
-            c
-            for c in df.columns
-            if "qty" in c.lower() or "كمية" in c or "الكمية" in c
-        ),
-        None,
-    )
-    sales_col = next(
-        (
-            c
-            for c in df.columns
-            if "sales" in c.lower() or "total" in c.lower() or "مبيعات" in c
-        ),
-        None,
-    )
+# دالة لقراءة ملف الإكسل الثابت من المستودع أوتوماتيك
+@st.cache_data
+def load_data():
+  # ضع هنا اسم ملف الإكسل كما رفعته تماماً على جيت هاب (مثلاً data.xlsx)
+  file_name = "data.xlsx"  # غير الاسم لاسم ملفك الفعلي المرفوع على جيت هاب
+  df = pd.read_excel(file_name)
+  df.columns = df.columns.str.strip()
+  return df
 
-    if supplier_col:
-      st.success("✅ تم تحميل الداتا بنجاح وجاهزة للاستعلام!")
 
-      # --- خانات البحث والاختيار (المورد، التاريخ، الفرع) ---
-      col1, col2, col3 = st.columns(3)
+try:
+  df = load_data()
+  st.success("✅ تم جلب الداتا الشهرية بنجاح وجاهزة للاستعلام والاعتماد!")
 
-      with col1:
-        suppliers_list = sorted(df[supplier_col].dropna().unique().astype(str))
-        selected_supplier = st.selectbox(
-            "🔍 اختر أو ابحث عن المورد:", options=suppliers_list
+  # البحث الذكي عن أسماء الأعمدة الأساسية
+  supplier_col = next(
+      (c for c in df.columns if "supplie" in c.lower() or "مورد" in c), None
+  )
+  date_col = next(
+      (c for c in df.columns if "date" in c.lower() or "تاريخ" in c), None
+  )
+  store_col = next(
+      (
+          c
+          for c in df.columns
+          if "store" in c.lower() or "source" in c.lower() or "فرع" in c
+      ),
+      None,
+  )
+  qty_col = next(
+      (
+          c
+          for c in df.columns
+          if "qty" in c.lower() or "كمية" in c or "الكمية" in c
+      ),
+      None,
+  )
+  sales_col = next(
+      (
+          c
+          for c in df.columns
+          if "sales" in c.lower() or "total" in c.lower() or "مبيعات" in c
+      ),
+      None,
+  )
+
+  if supplier_col:
+    # --- خانات البحث والاختيار (المورد، التاريخ، الفرع) ---
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+      suppliers_list = sorted(df[supplier_col].dropna().unique().astype(str))
+      selected_supplier = st.selectbox(
+          "🔍 اختر أو ابحث عن المورد:", options=suppliers_list
+      )
+
+    with col2:
+      if date_col:
+        dates_list = ["الكل"] + sorted(
+            df[date_col].dropna().unique().astype(str).tolist()
         )
+        selected_date = st.selectbox("📅 اختر الفترة / التاريخ:", options=dates_list)
+      else:
+        selected_date = "الكل"
 
-      with col2:
-        if date_col:
-          dates_list = ["الكل"] + sorted(
-              df[date_col].dropna().unique().astype(str).tolist()
-          )
-          selected_date = st.selectbox("📅 اختر الفترة / التاريخ:", options=dates_list)
-        else:
-          selected_date = "الكل"
-
-      with col3:
-        if store_col:
-          stores_list = ["الكل"] + sorted(
-              df[store_col].dropna().unique().astype(str).tolist()
-          )
-          selected_store = st.selectbox(
-              "🏬 اختر الفرع (Source Store):", options=stores_list
-          )
-        else:
-          selected_store = "الكل"
-
-      # تطبيق الفلاتر
-      filtered_df = df[df[supplier_col].astype(str) == selected_supplier]
-      if selected_date != "الكل" and date_col:
-        filtered_df = filtered_df[
-            filtered_df[date_col].astype(str) == selected_date
-        ]
-      if selected_store != "الكل" and store_col:
-        filtered_df = filtered_df[
-            filtered_df[store_col].astype(str) == selected_store
-        ]
-
-      st.markdown("---")
-      st.markdown(
-          f"### 📌 نتيجة البحث للمورد: `{selected_supplier}`"
-      )
-
-      # --- عرض إجمالي القطاع (Summary) ---
-      total_records = len(filtered_df)
-      total_quantity = (
-          filtered_df[qty_col].sum()
-          if qty_col and not filtered_df.empty
-          else 0
-      )
-      total_sales_val = (
-          filtered_df[sales_col].sum()
-          if sales_col and not filtered_df.empty
-          else 0
-      )
-
-      m1, m2, m3 = st.columns(3)
-      m1.metric("📦 إجمالي عدد الحركات", total_records)
-      m2.metric("📊 إجمالي الكميات (QTY)", f"{total_quantity:,.0f}")
-      if sales_col:
-        m3.metric("💰 إجمالي المبيعات", f"{total_sales_val:,.2f}")
-
-      st.markdown("---")
-
-      # --- خيار التفصيل (عرض تفاصيل الأصناف) ---
-      show_details = st.checkbox(
-          "📋 عرض تفاصيل الأصناف (Item Description / Code)"
-      )
-
-      if show_details:
-        st.markdown("#### 🔍 تفاصيل كل صنف على حدة:")
-        desc_col = next(
-            (
-                c
-                for c in df.columns
-                if "des" in c.lower() or "item" in c.lower() or "صنف" in c
-            ),
-            None,
+    with col3:
+      if store_col:
+        stores_list = ["الكل"] + sorted(
+            df[store_col].dropna().unique().astype(str).tolist()
         )
-
-        if desc_col and qty_col:
-          # تجميع البيانات لكل صنف
-          summary_items = (
-              filtered_df.groupby(desc_col)
-              .agg(
-                  {
-                      qty_col: "sum",
-                      **({sales_col: "sum"} if sales_col else {}),
-                  }
-              )
-              .reset_index()
-          )
-          st.dataframe(summary_items, use_container_width=True)
-        else:
-          st.dataframe(filtered_df, use_container_width=True)
-
-      # --- زرار الاعتماد والموافقة للإرسال على الميل ---
-      st.markdown("---")
-      if st.button("✉️ اعتماد وإرسال نتيجة المراجعة على البريد"):
-        st.balloons()
-        st.success(
-            f"🚀 تم إرسال اعتمادات المورد ({selected_supplier}) لمسؤول المشتريات"
-            " عبر البريد الإلكتروني بنجاح وتم تسجيل العملية في النظام!"
+        selected_store = st.selectbox(
+            "🏬 اختر الفرع (Source Store):", options=stores_list
         )
+      else:
+        selected_store = "الكل"
 
-    else:
-      st.error(
-          "⚠️ لم يتم العثور على عمود المورد (Supplier) في شيت الإكسل المرفوع."
-      )
+    # تطبيق الفلاتر
+    filtered_df = df[df[supplier_col].astype(str) == selected_supplier]
+    if selected_date != "الكل" and date_col:
+      filtered_df = filtered_df[
+          filtered_df[date_col].astype(str) == selected_date
+      ]
+    if selected_store != "الكل" and store_col:
+      filtered_df = filtered_df[
+          filtered_df[store_col].astype(str) == selected_store
+      ]
 
-  except Exception as e:
-    st.error(f"حدث خطأ أثناء معالجة الملف: {e}")
-else:
-    st.info(
-        "📂 برجاء رفع شيت المبيعات الشهري من القائمة الجانبية للبدء في الاستعلام"
-        " ومراجعة البيانات."
+    st.markdown("---")
+    st.markdown(f"### 📌 نتيجة البحث للمورد: `{selected_supplier}`")
+
+    # --- عرض إجمالي القطاع (Summary) ---
+    total_records = len(filtered_df)
+    total_quantity = (
+        filtered_df[qty_col].sum()
+        if qty_col and not filtered_df.empty
+        else 0
     )
+    total_sales_val = (
+        filtered_df[sales_col].sum()
+        if sales_col and not filtered_df.empty
+        else 0
+    )
+
+    m1, m2, m3 = st.columns(3)
+    m1.metric("📦 إجمالي عدد الحركات", total_records)
+    m2.metric("📊 إجمالي الكميات (QTY)", f"{total_quantity:,.0f}")
+    if sales_col:
+      m3.metric("💰 إجمالي المبيعات", f"{total_sales_val:,.2f}")
+
+    st.markdown("---")
+
+    # --- خيار التفصيل (عرض تفاصيل الأصناف) ---
+    show_details = st.checkbox("📋 عرض تفاصيل الأصناف (Item Description / Code)")
+
+    if show_details:
+      st.markdown("#### 🔍 تفاصيل كل صنف على حدة:")
+      desc_col = next(
+          (
+              c
+              for c in df.columns
+              if "des" in c.lower() or "item" in c.lower() or "صنف" in c
+          ),
+          None,
+      )
+
+      if desc_col and qty_col:
+        summary_items = (
+            filtered_df.groupby(desc_col)
+            .agg(
+                {
+                    qty_col: "sum",
+                    **({sales_col: "sum"} if sales_col else {}),
+                }
+            )
+            .reset_index()
+        )
+        st.dataframe(summary_items, use_container_width=True)
+      else:
+        st.dataframe(filtered_df, use_container_width=True)
+
+    # --- زرار الاعتماد والموافقة للإرسال على الميل ---
+    st.markdown("---")
+    if st.button("✉️ اعتماد وإرسال نتيجة المراجعة على البريد"):
+      st.balloons()
+      st.success(
+          f"🚀 تم إرسال اعتمادات المورد ({selected_supplier}) لمسؤول المشتريات"
+          " عبر البريد الإلكتروني بنجاح!"
+      )
+  else:
+    st.error("⚠️ لم يتم العثور على عمود المورد (Supplier) في ملف الإكسل الثابت.")
+
+except Exception as e:
+  st.error(
+      f"⚠️ برجاء التأكد من رفع ملف الإكسل في مستودع GitHub وتسميته بشكل صحيح."
+      f" الخطأ: {e}"
+  )
