@@ -27,26 +27,35 @@ st.markdown(
         background-color: #ff5500;
         color: white;
     }
+    /* تصميم فخم ومميز لشعار B.TECH في القائمة الجانبية */
     .btech-logo {
         text-align: center;
-        background: #1f3bb3;
+        background: linear-gradient(135deg, #1f3bb3 0%, #0d238a 100%);
         color: white;
-        padding: 15px;
-        border-radius: 10px;
-        font-size: 22px;
+        padding: 18px;
+        border-radius: 12px;
+        font-size: 24px;
         font-weight: bold;
-        letter-spacing: 2px;
+        letter-spacing: 3px;
         margin-bottom: 20px;
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+        box-shadow: 0px 4px 15px rgba(31,59,179,0.3);
+        border-bottom: 4px solid #ff5500;
     }
-    /* تثبيت الإجماليات في أعلى الصفحة لتكون مرئية دائماً أثناء التحديد */
-    .sticky-summary {
+    /* تكبير وإبراز جملة عرض تفاصيل الأصناف */
+    .details-checkbox label p {
+        font-size: 19px !important;
+        font-weight: bold !important;
+        color: #1f3bb3 !important;
+    }
+    /* تصميم كروت الإجماليات المصغرة لتكون بجوار الأصناف */
+    .side-metric-box {
         background-color: #ffffff;
         padding: 20px;
         border-radius: 12px;
-        box-shadow: 0px 4px 15px rgba(0,0,0,0.08);
-        border-right: 6px solid #ff5500;
-        margin-bottom: 25px;
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.08);
+        border-left: 5px solid #ff5500;
+        margin-bottom: 15px;
+        text-align: center;
     }
     </style>
 """,
@@ -113,7 +122,7 @@ def check_login():
 if not check_login():
   st.stop()
 
-# --- الشريط الجانبي وشعار B.TECH الاحترافي ---
+# --- الشريط الجانبي وشعار B.TECH المطور ---
 st.sidebar.markdown(
     f"👤 **المستخدم:** {st.session_state.username}\n\n📌"
     f" **الصلاحية:** {st.session_state.role}"
@@ -121,7 +130,8 @@ st.sidebar.markdown(
 st.sidebar.markdown("---")
 st.sidebar.markdown(
     '<div class="btech-logo">B . TECH <br><span'
-    ' style="font-size:12px; font-weight:normal;">Revenue Control</span></div>',
+    ' style="font-size:13px; font-weight:normal; letter-spacing:1px; color:#ffccaa;">Revenue'
+    ' Control</span></div>',
     unsafe_allow_html=True,
 )
 st.sidebar.markdown("---")
@@ -294,17 +304,21 @@ if data_loaded:
 
       final_selected_df = filtered_df.copy()
 
-      # --- خيار عرض وتحديد تفاصيل الأصناف ---
+      # --- خيار عرض وتحديد تفاصيل الأصناف (مع تكبير الخط والوضوح) ---
       st.markdown("---")
+      st.markdown('<div class="details-checkbox">', unsafe_allow_html=True)
       show_details = st.checkbox(
           "📋 عرض تفاصيل الأصناف (اختر المنتجات المراد مراجعتها واعتمادها)"
       )
+      st.markdown("</div>", unsafe_allow_html=True)
 
       selected_item_rows = []
+
       if show_details:
         st.markdown(
-            "#### 🔍 جدول الأصناف والكميات (حدد الأصناف المطلوبة للاعتماد):"
+            f"### 📦 مراجعة أصناف الموردين: `{', '.join(selected_suppliers)}`"
         )
+
         if desc_col and not filtered_df.empty:
           items_summary = (
               filtered_df.groupby(desc_col)
@@ -317,75 +331,98 @@ if data_loaded:
               .reset_index()
           )
 
-          for index, row in items_summary.iterrows():
-            item_name = row[desc_col]
-            item_qty = row[qty_col]
-            item_sales = row[sales_col] if sales_col else 0
+          # تقسيم الشاشة: عمود الأصناف وعمود الإجماليات المتحركة بجوارها مباشرة
+          col_items_list, col_live_metrics = st.columns([2.2, 1])
 
-            c_box, c_name, c_qty, c_sales = st.columns([0.5, 5, 2, 2])
-            with c_box:
-              is_checked = st.checkbox(
-                  "تحديد",
-                  value=True,
-                  key=f"item_chk_{index}",
-                  label_visibility="collapsed",
-              )
-            with c_name:
-              st.markdown(
-                  f"<b style='font-size:17px; color:#222;'>{item_name}</b>",
-                  unsafe_allow_html=True,
-              )
-            with c_qty:
-              st.markdown(
-                  f"<b style='font-size:17px; color:#1f3bb3;'>الكمية:"
-                  f" {item_qty:,.0f}</b>",
-                  unsafe_allow_html=True,
-              )
-            with c_sales:
-              if sales_col:
+          with col_items_list:
+            st.markdown(
+                "<p style='color:#555; font-weight:bold;'>حدد الأصناف المطلوبة"
+                " للاعتماد:</p>",
+                unsafe_allow_html=True,
+            )
+            for index, row in items_summary.iterrows():
+              item_name = row[desc_col]
+              item_qty = row[qty_col]
+              item_sales = row[sales_col] if sales_col else 0
+
+              c_box, c_name, c_qty = st.columns([0.5, 4.5, 2])
+              with c_box:
+                is_checked = st.checkbox(
+                    "تحديد",
+                    value=True,
+                    key=f"item_chk_{index}",
+                    label_visibility="collapsed",
+                )
+              with c_name:
                 st.markdown(
-                    f"<b style='font-size:17px; color:#ff5500;'>المبيعات:"
-                    f" {item_sales:,.2f}</b>",
+                    f"<b style='font-size:16px; color:#222;'>{item_name}</b>",
+                    unsafe_allow_html=True,
+                )
+              with c_qty:
+                st.markdown(
+                    f"<b style='font-size:16px; color:#1f3bb3;'>الكمية:"
+                    f" {item_qty:,.0f}</b>",
                     unsafe_allow_html=True,
                 )
 
-            if is_checked:
-              selected_item_rows.append(item_name)
+              if is_checked:
+                selected_item_rows.append(item_name)
 
+          # تحديث الداتا بناءً على الأصناف المحددة
           final_selected_df = filtered_df[
               filtered_df[desc_col].astype(str).isin(selected_item_rows)
           ]
+
+          # --- الإجماليات المتحركة بجوار الأصناف مباشرة ---
+          with col_live_metrics:
+            st.markdown(
+                "#### 📊 الإجمالي المعتمد المباشر", unsafe_allow_html=True
+            )
+            st.markdown('<div class="side-metric-box">', unsafe_allow_html=True)
+            st.metric(
+                "📦 إجمالي الحركات", f"{len(final_selected_df):,}"
+            )
+            st.markdown("---")
+            st.metric(
+                "📊 إجمالي الكميات",
+                f"{final_selected_df[qty_col].sum() if qty_col and not final_selected_df.empty else 0:,.0f}",
+            )
+            if sales_col:
+              st.markdown("---")
+              st.metric(
+                  "💰 إجمالي المبيعات",
+                  f"{final_selected_df[sales_col].sum() if not final_selected_df.empty else 0:,.2f}",
+              )
+            st.markdown("</div>", unsafe_allow_html=True)
+
         else:
           st.dataframe(filtered_df, use_container_width=True)
+      else:
+        # لو مش مفعل التفاصيل، نعرض الإجماليات بشكل عريض فوق
+        st.markdown("---")
+        st.markdown(
+            f"### 📌 الإجمالي العام للقطاع للموردين: `"
+            f"{', '.join(selected_suppliers)}`"
+        )
+        total_records = len(final_selected_df)
+        total_quantity = (
+            final_selected_df[qty_col].sum()
+            if qty_col and not final_selected_df.empty
+            else 0
+        )
+        total_sales_val = (
+            final_selected_df[sales_col].sum()
+            if sales_col and not final_selected_df.empty
+            else 0
+        )
 
-      # --- الإجماليات مثبتة في الأعلى وواضحة جداً وتتحدث أوتوماتيك ---
-      st.markdown("---")
-      st.markdown('<div class="sticky-summary">', unsafe_allow_html=True)
-      st.markdown(
-          f"### 📌 الإجمالي العام المعتمد للقطاع للموردين والمحدد:"
-          f" `{', '.join(selected_suppliers)}`"
-      )
+        m1, m2, m3 = st.columns(3)
+        m1.metric("📦 إجمالي عدد الحركات المعتمدة", total_records)
+        m2.metric("📊 إجمالي الكميات المعتمدة", f"{total_quantity:,.0f}")
+        if sales_col:
+          m3.metric("💰 إجمالي المبيعات", f"{total_sales_val:,.2f}")
 
-      total_records = len(final_selected_df)
-      total_quantity = (
-          final_selected_df[qty_col].sum()
-          if qty_col and not final_selected_df.empty
-          else 0
-      )
-      total_sales_val = (
-          final_selected_df[sales_col].sum()
-          if sales_col and not final_selected_df.empty
-          else 0
-      )
-
-      m1, m2, m3 = st.columns(3)
-      m1.metric("📦 إجمالي عدد الحركات المعتمدة", total_records)
-      m2.metric("📊 إجمالي الكميات المعتمدة", f"{total_quantity:,.0f}")
-      if sales_col:
-        m3.metric("💰 إجمالي المبيعات", f"{total_sales_val:,.2f}")
-      st.markdown("</div>", unsafe_allow_html=True)
-
-      # --- قسم إرسال البريد الإلكتروني السلس عبر Gmail (بدون باسوردات معقدة) ---
+      # --- قسم إرسال البريد الإلكتروني عبر Gmail ---
       st.markdown("---")
       st.markdown("### ✉️ إرسال اعتماد المراجعة عبر البريد الإلكتروني")
 
@@ -422,6 +459,17 @@ if data_loaded:
               if date_range and len(date_range) == 2
               else "كل الفترات"
           )
+          total_qty_val = (
+              final_selected_df[qty_col].sum()
+              if qty_col and not final_selected_df.empty
+              else 0
+          )
+          total_val = (
+              final_selected_df[sales_col].sum()
+              if sales_col and not final_selected_df.empty
+              else 0
+          )
+
           email_subject = urllib.parse.quote(
               "B.TECH - اعتماد مراجعة مشتريات الموردين (Revenue Follow Up)"
           )
@@ -431,8 +479,8 @@ if data_loaded:
               f"- الموردون المعتمدون: {', '.join(selected_suppliers)}\n"
               f"- الفترة الزمنية: {period_str}\n"
               f"- إجمالي الحركات المعتمدة: {len(final_selected_df)}\n"
-              f"- إجمالي الكميات المعتمدة: {total_quantity:,.0f}\n"
-              f"- إجمالي القيمة: {total_sales_val:,.2f}\n\n"
+              f"- إجمالي الكميات المعتمدة: {total_qty_val:,.0f}\n"
+              f"- إجمالي القيمة: {total_val:,.2f}\n\n"
               f"مع تحيات قسم Revenue Follow Up - B.TECH"
           )
 
