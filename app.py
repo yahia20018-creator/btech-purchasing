@@ -92,7 +92,7 @@ def check_login():
 if not check_login():
   st.stop()
 
-# --- الشريط الجانبي والشعار ---
+# --- الشريط الجانبي وشعار B.TECH ---
 st.sidebar.markdown(
     f"👤 **المستخدم:** {st.session_state.username}\n\n📌"
     f" **الصلاحية:** {st.session_state.role}"
@@ -103,7 +103,8 @@ try:
   st.sidebar.image("logo.png", use_container_width=True)
 except:
   st.sidebar.markdown(
-      "<h3 style='text-align: center; color: #ff5500;'>B.TECH</h3>",
+      "<h2 style='text-align: center; color: #ff5500; font-weight: bold;'>B"
+      " . TECH</h2>",
       unsafe_allow_html=True,
   )
 
@@ -213,9 +214,17 @@ try:
   )
 
   if supplier_col:
-    # --- الفلاتر الأساسية (الموردين بنظام علامات الصح Checkboxes، التاريخ، الفرع) ---
+    # --- الفلاتر الأساسية بترتيب شيك واحترافي ---
     st.markdown("### 🔍 فلاتر البحث والتدقيق")
-    col_date, col_store = st.columns(2)
+    col_sup, col_date, col_store = st.columns(3)
+
+    with col_sup:
+      all_suppliers = sorted(df[supplier_col].dropna().unique().astype(str))
+      selected_suppliers = st.multiselect(
+          "🔍 اختر أو ابحث عن الموردين:",
+          options=all_suppliers,
+          default=[all_suppliers[0]] if all_suppliers else [],
+      )
 
     with col_date:
       if date_col:
@@ -224,7 +233,7 @@ try:
         if not valid_dates.empty:
           min_d, max_d = valid_dates.min().date(), valid_dates.max().date()
           date_range = st.date_input(
-              "📅 اختر الفترة الزمنية (من - إلى):", value=(min_d, max_d)
+              "📅 الفترة الزمنية (من - إلى):", value=(min_d, max_d)
           )
         else:
           date_range = None
@@ -239,18 +248,6 @@ try:
         selected_store = st.selectbox("🏬 اختر الفرع / المخزن:", options=stores_list)
       else:
         selected_store = "الكل"
-
-    # --- اختيار الموردين بـ Checkboxes منظمة واحترافية ---
-    st.markdown("#### 👥 اختر الموردين المطلوب مراجعتهم:")
-    all_suppliers = sorted(df[supplier_col].dropna().unique().astype(str))
-
-    # إنشاء مربعات اختيار أفقية/شبكية للموردين
-    selected_suppliers = []
-    cols_sup = st.columns(3)
-    for idx, sup in enumerate(all_suppliers):
-      with cols_sup[idx % 3]:
-        if st.checkbox(sup, key=f"sup_{idx}"):
-          selected_suppliers.append(sup)
 
     if not selected_suppliers:
       st.warning("⚠️ برجاء اختيار مورد واحد على الأقل للبدء في العرض.")
@@ -276,7 +273,7 @@ try:
           f" `{', '.join(selected_suppliers)}`"
       )
 
-      # --- عرض مؤشرات الأداء الإجمالية فقط في البداية ---
+      # --- عرض الإجمالي العام فقط أولاً ---
       total_records = len(filtered_df)
       total_quantity = (
           filtered_df[qty_col].sum()
@@ -297,26 +294,20 @@ try:
 
       st.markdown("---")
 
-      # --- خيار عرض التفاصيل (الأصناف والكميات) حسب الطلب ---
+      # --- خيار عرض التفاصيل (الأصناف والكميات مع بوكسات تحديد) ---
       show_details = st.checkbox(
-          "📋 عرض تفاصيل الأصناف والكميات للمراجعة وتحديد المنتجات"
+          "📋 عرض تفاصيل الأصناف (اختر المنتجات المراد مراجعتها واعتمادها)"
       )
 
+      final_selected_df = filtered_df.copy()
+
       if show_details:
-        st.markdown("#### 🔍 تحديد المراجعة حسب الأصناف:")
+        st.markdown(
+            "#### 🔍 جدول الأصناف والكميات (حدد الأصناف المطلوبة للاعتماد):"
+        )
         if desc_col and not filtered_df.empty:
-          all_items = sorted(
-              filtered_df[desc_col].dropna().unique().astype(str).tolist()
-          )
-
-          # بوكسات لاختيار المنتجات بدقة
-          selected_items = []
-          st.markdown(
-              "حدد علامة الصح بجانب الأصناف المراد اعتمادها ضمن المراجعة:"
-          )
-
-          # عرض الأصناف في جدول أو مربعات اختيار مصغرة
-          item_df = (
+          # تجهيز جدول ملخص الأصناف
+          items_summary = (
               filtered_df.groupby(desc_col)
               .agg(
                   {
@@ -327,19 +318,33 @@ try:
               .reset_index()
           )
 
-          # جدول تفصيلي بالأصناف والكميات مع زر تحديد
-          st.dataframe(item_df, use_container_width=True)
+          # إضافة عمود اختيار (Checkbox) لكل صنف
+          selected_item_rows = []
+          for index, row in items_summary.iterrows():
+            item_name = row[desc_col]
+            item_qty = row[qty_col]
+            item_sales = row[sales_col] if sales_col else 0
 
-          # خيار تصفية بالمنتجات المحددة
-          selected_items = st.multiselect(
-              "تصفية الأصناف للاعتماد النهائي:",
-              options=all_items,
-              default=all_items,
-          )
-          if selected_items:
-            filtered_df = filtered_df[
-                filtered_df[desc_col].astype(str).isin(selected_items)
-            ]
+            c_box, c_name, c_qty, c_sales = st.columns([0.5, 5, 2, 2])
+            with c_box:
+              is_checked = st.checkbox(
+                  "تحديد", value=True, key=f"item_chk_{index}", label_visibility="collapsed"
+              )
+            with c_name:
+              st.write(item_name)
+            with c_qty:
+              st.write(f"الكمية: **{item_qty:,.0f}**")
+            with c_sales:
+              if sales_col:
+                st.write(f"المبيعات: **{item_sales:,.2f}**")
+
+            if is_checked:
+              selected_item_rows.append(item_name)
+
+          # فلترة الداتا بناءً على الأصناف التي تم اختيارها فقط
+          final_selected_df = filtered_df[
+              filtered_df[desc_col].astype(str).isin(selected_item_rows)
+          ]
         else:
           st.dataframe(filtered_df, use_container_width=True)
 
@@ -364,49 +369,55 @@ try:
       with col_m3:
         mail_3 = st.text_input("المرسل إليه (3 - اختياري):", value="")
 
-      # تجميع الإيميلات المدخلة
+      # تجميع الإيميلات
       recipients_list = [m.strip() for m in [mail_1, mail_2, mail_3] if m.strip()]
       recipients_str = ", ".join(recipients_list)
 
       if st.button("🚀 اعتماد وإرسال تفاصيل المراجعة رسمياً"):
-        if filtered_df.empty:
+        if final_selected_df.empty:
           st.warning(
-              "⚠️ لا توجد بيانات مطابقة للفلاتر الحالية لإرسالها في الاعتماد."
+              "⚠️ لا توجد أصناف محددة أو بيانات مطابقة للفلاتر الحالية للإرسال."
           )
         elif not recipients_list:
           st.warning("⚠️ برجاء كتابة بريد إلكتروني واحد على الأقل للمرسل إليه.")
         else:
           st.balloons()
           st.success(
-              f"✅ تم إرسال الاعتماد بنجاح من قبل **{sender_email}** إلى الإيميلات:"
-              f" `{recipients_str}`"
+              f"✅ تم معالجة وتجهيز الاعتماد للإرسال من **{sender_email}** إلى"
+              f" الإيميلات: `{recipients_str}`"
           )
 
-          with st.expander("📄 معاينة محتوى البريد المرسل (Email Content Preview)"):
-            period_str = (
-                f"من {date_range[0]} إلى {date_range[1]}"
-                if date_range and len(date_range) == 2
-                else "كل الفترات"
-            )
-            st.markdown(f"**من:** {sender_email}")
-            st.markdown(f"**إلى:** {recipients_str}")
-            st.markdown(
-                f"**الموضوع:** اعتماد مراجعة المشتريات - Revenue Follow Up"
-                f" Department"
-            )
-            st.markdown("---")
-            st.markdown(
-                f"**الموردون المعتمدون:** {', '.join(selected_suppliers)}"
-            )
-            st.markdown(f"**المدة / الفترة:** {period_str}")
-            st.markdown(f"**إجمالي الحركات:** {len(filtered_df)}")
-            st.markdown(f"**إجمالي الكميات:** {total_quantity:,.0f}")
-            if sales_col:
-              st.markdown(f"**إجمالي القيمة:** {total_sales_val:,.2f}")
-            st.markdown(
-                "**تم إرفاق تفاصيل الأصناف والكميات الخاصة بالموردين المعتمدين"
-                " بنجاح.**"
-            )
+          # بناء محتوى البريد الإلكتروني الفعلي لفتح عميل البريد أوتوماتيك
+          period_str = (
+              f"من {date_range[0]} إلى {date_range[1]}"
+              if date_range and len(date_range) == 2
+              else "كل الفترات"
+          )
+          email_subject = (
+              "B.TECH - اعتماد مراجعة مشتريات الموردين (Revenue Follow Up)"
+          )
+          email_body = (
+              f"مرحباً,\n\nتم اعتماد مراجعة المشتريات بالبيانات الآتية:\n"
+              f"- الموردون المعتمدون: {', '.join(selected_suppliers)}\n"
+              f"- الفترة الزمنية: {period_str}\n"
+              f"- إجمالي الحركات المعتمدة: {len(final_selected_df)}\n"
+              f"- إجمالي الكميات: {final_selected_df[qty_col].sum():,.0f}\n\n"
+              f"مع تحيات قسم Revenue Follow Up - B.TECH"
+          )
+
+          import urllib.parse
+
+          mailto_link = f"mailto:{recipients_str}?subject={urllib.parse.quote(email_subject)}&body={urllib.parse.quote(email_body)}"
+
+          # زر تفاعلي يفتح برنامج البريد مباشرة لإرسال الميل الفعلي
+          st.markdown(
+              f'<a href="{mailto_link}" target="_blank"><button'
+              ' style="background-color:#ff5500; color:white; padding:10px'
+              ' 20px; border:none; border-radius:5px; font-weight:bold; cursor:'
+              ' pointer; width:100%;">📧 اضغط هنا لفتح البريد وإرسال الاعتماد'
+              ' رسمياً</button></a>',
+              unsafe_allow_html=True,
+          )
 
   else:
     st.error("⚠️ لم يتم العثور على عمود المورد (Supplier) في ملف الإكسل المرفوع.")
