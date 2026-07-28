@@ -150,7 +150,8 @@ st.markdown("نظام التدقيق، مراجعة الموردين، وإرس�
 st.markdown("---")
 
 
-# دالة قراءة ملف الإكسل التلقائي
+# دالة قراءة ملف الإكسل مع مؤشر تحميل لمنع القلق
+@st.cache_data
 def load_data():
   excel_files = glob.glob("*.xlsx") + glob.glob("*.xls") + glob.glob("*.xlsm")
   if not excel_files:
@@ -163,8 +164,18 @@ def load_data():
   return df, file_name
 
 
-try:
-  df, detected_file = load_data()
+with st.spinner("⏳ جاري تحميل البيانات وتجهيز النظام، برجاء الانتظار..."):
+  try:
+    df, detected_file = load_data()
+    data_loaded = True
+  except Exception as e:
+    data_loaded = False
+    st.warning(
+        "⚠️ برجاء التأكد من رفع ملف إكسل واحد على الأقل داخل مستودع GitHub بجانب"
+        f" الكود. التفاصيل: {e}"
+    )
+
+if data_loaded:
   st.success(
       f"✅ تم تحميل شيت البيانات بنجاح من الملف (`{detected_file}`) وجاهز"
       " للعمل!"
@@ -252,7 +263,7 @@ try:
     if not selected_suppliers:
       st.warning("⚠️ برجاء اختيار مورد واحد على الأقل للبدء في العرض.")
     else:
-      # تطبيق الفلاتر على الداتا
+      # تطبيق الفلاتر على الداتا الأساسية
       filtered_df = df[df[supplier_col].astype(str).isin(selected_suppliers)]
 
       if date_range and len(date_range) == 2 and date_col:
@@ -267,46 +278,21 @@ try:
             filtered_df[store_col].astype(str) == selected_store
         ]
 
-      st.markdown("---")
-      st.markdown(
-          f"### 📌 الإجمالي العام للقطاع للموردين المختارين:"
-          f" `{', '.join(selected_suppliers)}`"
-      )
-
-      # --- عرض الإجمالي العام فقط أولاً ---
-      total_records = len(filtered_df)
-      total_quantity = (
-          filtered_df[qty_col].sum()
-          if qty_col and not filtered_df.empty
-          else 0
-      )
-      total_sales_val = (
-          filtered_df[sales_col].sum()
-          if sales_col and not filtered_df.empty
-          else 0
-      )
-
-      m1, m2, m3 = st.columns(3)
-      m1.metric("📦 إجمالي عدد الحركات", total_records)
-      m2.metric("📊 إجمالي الكميات المطلوبة", f"{total_quantity:,.0f}")
-      if sales_col:
-        m3.metric("💰 إجمالي المبيعات", f"{total_sales_val:,.2f}")
-
-      st.markdown("---")
+      # تجهيز المتغيرات الافتراضية لعرض التفاصيل والأصناف
+      final_selected_df = filtered_df.copy()
 
       # --- خيار عرض التفاصيل (الأصناف والكميات مع بوكسات تحديد) ---
+      st.markdown("---")
       show_details = st.checkbox(
           "📋 عرض تفاصيل الأصناف (اختر المنتجات المراد مراجعتها واعتمادها)"
       )
 
-      final_selected_df = filtered_df.copy()
-
+      selected_item_rows = []
       if show_details:
         st.markdown(
             "#### 🔍 جدول الأصناف والكميات (حدد الأصناف المطلوبة للاعتماد):"
         )
         if desc_col and not filtered_df.empty:
-          # تجهيز جدول ملخص الأصناف
           items_summary = (
               filtered_df.groupby(desc_col)
               .agg(
@@ -318,8 +304,6 @@ try:
               .reset_index()
           )
 
-          # إضافة عمود اختيار (Checkbox) لكل صنف
-          selected_item_rows = []
           for index, row in items_summary.iterrows():
             item_name = row[desc_col]
             item_qty = row[qty_col]
@@ -328,7 +312,10 @@ try:
             c_box, c_name, c_qty, c_sales = st.columns([0.5, 5, 2, 2])
             with c_box:
               is_checked = st.checkbox(
-                  "تحديد", value=True, key=f"item_chk_{index}", label_visibility="collapsed"
+                  "تحديد",
+                  value=True,
+                  key=f"item_chk_{index}",
+                  label_visibility="collapsed",
               )
             with c_name:
               st.write(item_name)
@@ -341,14 +328,39 @@ try:
             if is_checked:
               selected_item_rows.append(item_name)
 
-          # فلترة الداتا بناءً على الأصناف التي تم اختيارها فقط
+          # تحديث الداتا بناءً على الأصناف المحددة فقط
           final_selected_df = filtered_df[
               filtered_df[desc_col].astype(str).isin(selected_item_rows)
           ]
         else:
           st.dataframe(filtered_df, use_container_width=True)
 
-      # --- قسم إرسال البريد الإلكتروني للاعتماد (مع خانات متعددة للمرسل إليهم) ---
+      # --- عرض الإجمالي العام للقطاع (يتحدث أوتوماتيك بناءً على الأصناف المحددة) ---
+      st.markdown("---")
+      st.markdown(
+          f"### 📌 الإجمالي العام للقطاع للموردين والأصناف المحددة:"
+          f" `{', '.join(selected_suppliers)}`"
+      )
+
+      total_records = len(final_selected_df)
+      total_quantity = (
+          final_selected_df[qty_col].sum()
+          if qty_col and not final_selected_df.empty
+          else 0
+      )
+      total_sales_val = (
+          final_selected_df[sales_col].sum()
+          if sales_col and not final_selected_df.empty
+          else 0
+      )
+
+      m1, m2, m3 = st.columns(3)
+      m1.metric("📦 إجمالي عدد الحركات المعتمدة", total_records)
+      m2.metric("📊 إجمالي الكميات المطلوبة", f"{total_quantity:,.0f}")
+      if sales_col:
+        m3.metric("💰 إجمالي المبيعات", f"{total_sales_val:,.2f}")
+
+      # --- قسم إرسال البريد الإلكتروني للاعتماد أوتوماتيك ---
       st.markdown("---")
       st.markdown("### ✉️ إرسال اعتماد المراجعة عبر البريد الإلكتروني")
 
@@ -369,7 +381,6 @@ try:
       with col_m3:
         mail_3 = st.text_input("المرسل إليه (3 - اختياري):", value="")
 
-      # تجميع الإيميلات
       recipients_list = [m.strip() for m in [mail_1, mail_2, mail_3] if m.strip()]
       recipients_str = ", ".join(recipients_list)
 
@@ -382,12 +393,8 @@ try:
           st.warning("⚠️ برجاء كتابة بريد إلكتروني واحد على الأقل للمرسل إليه.")
         else:
           st.balloons()
-          st.success(
-              f"✅ تم معالجة وتجهيز الاعتماد للإرسال من **{sender_email}** إلى"
-              f" الإيميلات: `{recipients_str}`"
-          )
 
-          # بناء محتوى البريد الإلكتروني الفعلي لفتح عميل البريد أوتوماتيك
+          # بناء محتوى البريد الإلكتروني وفتحه أوتوماتيك لإرسال الميل
           period_str = (
               f"من {date_range[0]} إلى {date_range[1]}"
               if date_range and len(date_range) == 2
@@ -397,11 +404,12 @@ try:
               "B.TECH - اعتماد مراجعة مشتريات الموردين (Revenue Follow Up)"
           )
           email_body = (
-              f"مرحباً,\n\nتم اعتماد مراجعة المشتريات بالبيانات الآتية:\n"
+              f"مرحباً,\n\nتم اعتماد مراجعة المشتريات للقطاع بالبيانات الآتية:\n"
               f"- الموردون المعتمدون: {', '.join(selected_suppliers)}\n"
               f"- الفترة الزمنية: {period_str}\n"
               f"- إجمالي الحركات المعتمدة: {len(final_selected_df)}\n"
-              f"- إجمالي الكميات: {final_selected_df[qty_col].sum():,.0f}\n\n"
+              f"- إجمالي الكميات المعتمدة: {total_quantity:,.0f}\n"
+              f"- إجمالي القيمة: {total_sales_val:,.2f}\n\n"
               f"مع تحيات قسم Revenue Follow Up - B.TECH"
           )
 
@@ -409,21 +417,17 @@ try:
 
           mailto_link = f"mailto:{recipients_str}?subject={urllib.parse.quote(email_subject)}&body={urllib.parse.quote(email_body)}"
 
-          # زر تفاعلي يفتح برنامج البريد مباشرة لإرسال الميل الفعلي
-          st.markdown(
-              f'<a href="{mailto_link}" target="_blank"><button'
-              ' style="background-color:#ff5500; color:white; padding:10px'
-              ' 20px; border:none; border-radius:5px; font-weight:bold; cursor:'
-              ' pointer; width:100%;">📧 اضغط هنا لفتح البريد وإرسال الاعتماد'
-              ' رسمياً</button></a>',
-              unsafe_allow_html=True,
+          # كود جافاسكريبت لفتح عميل البريد أوتوماتيك لحظياً عند الضغط
+          js_code = f"""
+                <script>
+                    window.location.href = "{mailto_link}";
+                </script>
+                """
+          st.components.v1.html(js_code, height=0)
+          st.success(
+              f"✅ تم معالجة وإرسال الاعتماد أوتوماتيك من **{sender_email}** إلى"
+              f" الإيميلات: `{recipients_str}` وتم فتح برنامج البريد الخاص بك!"
           )
 
   else:
     st.error("⚠️ لم يتم العثور على عمود المورد (Supplier) في ملف الإكسل المرفوع.")
-
-except Exception as e:
-  st.warning(
-      "⚠️ برجاء التأكد من رفع ملف إكسل واحد على الأقل داخل مستودع GitHub بجانب"
-      f" الكود. التفاصيل: {e}"
-  )
