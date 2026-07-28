@@ -27,16 +27,23 @@ st.markdown(
         background-color: #ff5500;
         color: white;
     }
-    /* تصميم لتثبيت الإجماليات لتكون مرئية دائماً */
+    /* تثبيت الإجماليات لتكون مرئية دائماً وبخط كبير واضح */
     .sticky-metrics {
         position: sticky;
         top: 0;
         z-index: 999;
         background-color: #ffffff;
-        padding: 10px;
+        padding: 15px;
         border-radius: 10px;
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.05);
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.1);
         margin-bottom: 20px;
+        border: 2px solid #1f3bb3;
+    }
+    /* تكبير خط عرض الأصناف والكميات ليكون واضح جداً */
+    .item-row-text {
+        font-size: 18px !important;
+        font-weight: 600 !important;
+        color: #333333;
     }
     </style>
 """,
@@ -103,7 +110,7 @@ def check_login():
 if not check_login():
   st.stop()
 
-# --- الشريط الجانبي وشعار B.TECH عبر الرابط المباشر ---
+# --- الشريط الجانبي وشعار B.TECH بالرابط المباشر الصحيح ---
 st.sidebar.markdown(
     f"👤 **المستخدم:** {st.session_state.username}\n\n📌"
     f" **الصلاحية:** {st.session_state.role}"
@@ -111,12 +118,8 @@ st.sidebar.markdown(
 st.sidebar.markdown("---")
 
 try:
-  # استخدام رابط الشعار المباشر الذي قمت بتوفيره
-  logo_url = "https://i.ibb.co/6RHhg1GJ/logo.png"  # رابط مباشر مقترح أو شعار الشركة
-  st.sidebar.image(
-      "https://images.crunchbase.com/image/upload/c_lpad,h_256,w_256,f_auto,q_auto:eco,dpr_1/v1486545731/p69t0j3c7e4g4e7j1f2x.png",
-      use_container_width=True,
-  )
+  logo_url = "https://i.postimg.cc/MpSTvz9C/images-(1).png"
+  st.sidebar.image(logo_url, use_container_width=True)
 except:
   st.sidebar.markdown(
       "<h2 style='text-align: center; color: #ff5500; font-weight: bold;'>B"
@@ -166,7 +169,7 @@ st.markdown("نظام التدقيق، مراجعة الموردين، وإرس�
 st.markdown("---")
 
 
-# دالة قراءة ملف الإكسل مع مؤشر تحميل
+# دالة قراءة ملف الإكسل
 @st.cache_data
 def load_data():
   excel_files = glob.glob("*.xlsx") + glob.glob("*.xls") + glob.glob("*.xlsm")
@@ -295,7 +298,7 @@ if data_loaded:
 
       final_selected_df = filtered_df.copy()
 
-      # --- خيار عرض التفاصيل (الأصناف والكميات مع بوكسات تحديد) ---
+      # --- خيار عرض التفاصيل بخط واضح ومريح ---
       st.markdown("---")
       show_details = st.checkbox(
           "📋 عرض تفاصيل الأصناف (اختر المنتجات المراد مراجعتها واعتمادها)"
@@ -332,12 +335,23 @@ if data_loaded:
                   label_visibility="collapsed",
               )
             with c_name:
-              st.write(item_name)
+              st.markdown(
+                  f'<p class="item-row-text">{item_name}</p>',
+                  unsafe_allow_html=True,
+              )
             with c_qty:
-              st.write(f"الكمية: **{item_qty:,.0f}**")
+              st.markdown(
+                  f'<p class="item-row-text" style="color:#1f3bb3;">الكمية:'
+                  f" {item_qty:,.0f}</p>",
+                  unsafe_allow_html=True,
+              )
             with c_sales:
               if sales_col:
-                st.write(f"المبيعات: **{item_sales:,.2f}**")
+                st.markdown(
+                    f'<p class="item-row-text" style="color:#ff5500;">المبيعات:'
+                    f" {item_sales:,.2f}</p>",
+                    unsafe_allow_html=True,
+                )
 
             if is_checked:
               selected_item_rows.append(item_name)
@@ -348,7 +362,7 @@ if data_loaded:
         else:
           st.dataframe(filtered_df, use_container_width=True)
 
-      # --- الإجماليات المثبتة (تتحدث فوراً مع كل علامة صح) ---
+      # --- الإجماليات المثبتة في الأعلى (تتحدث أوتوماتيك مع كل علامة صح) ---
       st.markdown("---")
       st.markdown('<div class="sticky-metrics">', unsafe_allow_html=True)
       st.markdown(
@@ -375,13 +389,12 @@ if data_loaded:
         m3.metric("💰 إجمالي المبيعات", f"{total_sales_val:,.2f}")
       st.markdown("</div>", unsafe_allow_html=True)
 
-      # --- قسم إرسال البريد الإلكتروني عبر حساب الجيميل (`yahia20018@gmail.com`) ---
+      # --- قسم إرسال البريد الإلكتروني عبر حساب الجيميل الخاص بك (`yahia20018@gmail.com`) ---
       st.markdown("---")
       st.markdown(
           "### ✉️ إرسال اعتماد المراجعة عبر البريد الإلكتروني (Gmail Integration)"
       )
 
-      # تثبيت الإيميل المرسل منه على الجيميل الخاص بك
       sender_email = st.text_input(
           "البريد المرسل منه (Sender Gmail):", value="yahia20018@gmail.com"
       )
@@ -410,7 +423,6 @@ if data_loaded:
         else:
           st.balloons()
 
-          # تجهيز رابط Gmail Web Compose لإرسال الميل بشكل مباشر وسلس
           period_str = (
               f"من {date_range[0]} إلى {date_range[1]}"
               if date_range and len(date_range) == 2
@@ -421,7 +433,7 @@ if data_loaded:
           )
           email_body = urllib.parse.quote(
               f"مرحباً,\n\nتم اعتماد مراجعة المشتريات للقطاع بالبيانات الآتية:\n"
-              f"- مرسل من: {sender_email}\n"
+              f"- مرسل من حساب: {sender_email}\n"
               f"- الموردون المعتمدون: {', '.join(selected_suppliers)}\n"
               f"- الفترة الزمنية: {period_str}\n"
               f"- إجمالي الحركات المعتمدة: {len(final_selected_df)}\n"
@@ -432,18 +444,19 @@ if data_loaded:
 
           gmail_link = f"https://mail.google.com/mail/?view=cm&fs=1&to={recipients_str}&su={email_subject}&body={email_body}"
 
-          # فتح نافذة Gmail أوتوماتيك لإرسال الميل فوراً
-          js_redirect = f"""
-                <script>
-                    window.open("{gmail_link}", "_blank");
-                </script>
-                """
-          st.components.v1.html(js_redirect, height=0)
+          # زر تفاعلي يفتح Gmail فوراً بالاعتماد الجاهز للإرسال
+          st.markdown(
+              f'<a href="{gmail_link}" target="_blank"><button'
+              ' style="background-color:#ff5500; color:white; padding:12px'
+              ' 24px; border:none; border-radius:8px; font-weight:bold; font-size:'
+              ' 16px; cursor:pointer; width:100%;">📧 اضغط هنا لفتح Gmail وإرسال'
+              ' الاعتماد نهائياً</button></a>',
+              unsafe_allow_html=True,
+          )
 
           st.success(
-              f"✅ تم تجهيز رسالة الاعتماد بنجاح! تم فتح نافذة Gmail لإرسال"
-              f" الميل مباشرة من حسابك ({sender_email}) إلى:"
-              f" `{recipients_str}`"
+              f"✅ تم تجهيز رسالة الاعتماد بنجاح! اضغط على الزر البرتقالي أعلاه"
+              f" لفتح Gmail وإرسالها فوراً من حسابك ({sender_email})."
           )
 
   else:
