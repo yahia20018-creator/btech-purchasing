@@ -1,5 +1,6 @@
 import glob
 from datetime import datetime
+import urllib.parse
 import pandas as pd
 import streamlit as st
 
@@ -26,7 +27,17 @@ st.markdown(
         background-color: #ff5500;
         color: white;
     }
-    .css-18e3th9 {padding-top: 1rem;}
+    /* تصميم لتثبيت الإجماليات لتكون مرئية دائماً */
+    .sticky-metrics {
+        position: sticky;
+        top: 0;
+        z-index: 999;
+        background-color: #ffffff;
+        padding: 10px;
+        border-radius: 10px;
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+    }
     </style>
 """,
     unsafe_allow_html=True,
@@ -38,7 +49,7 @@ if "user_credentials" not in st.session_state:
       "yahia": {
           "password": "1234",
           "role": "مدير النظام (Admin)",
-          "email": "yahia.emam@btech.com",
+          "email": "yahia20018@gmail.com",
       },
       "purchasing": {
           "password": "btech2026",
@@ -81,7 +92,7 @@ def check_login():
             ]["role"]
             st.session_state.email = st.session_state.user_credentials[
                 matched_user
-            ].get("email", "yahia.emam@btech.com")
+            ].get("email", "yahia20018@gmail.com")
             st.rerun()
           else:
             st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة")
@@ -92,7 +103,7 @@ def check_login():
 if not check_login():
   st.stop()
 
-# --- الشريط الجانبي وشعار B.TECH ---
+# --- الشريط الجانبي وشعار B.TECH عبر الرابط المباشر ---
 st.sidebar.markdown(
     f"👤 **المستخدم:** {st.session_state.username}\n\n📌"
     f" **الصلاحية:** {st.session_state.role}"
@@ -100,7 +111,12 @@ st.sidebar.markdown(
 st.sidebar.markdown("---")
 
 try:
-  st.sidebar.image("logo.png", use_container_width=True)
+  # استخدام رابط الشعار المباشر الذي قمت بتوفيره
+  logo_url = "https://i.ibb.co/6RHhg1GJ/logo.png"  # رابط مباشر مقترح أو شعار الشركة
+  st.sidebar.image(
+      "https://images.crunchbase.com/image/upload/c_lpad,h_256,w_256,f_auto,q_auto:eco,dpr_1/v1486545731/p69t0j3c7e4g4e7j1f2x.png",
+      use_container_width=True,
+  )
 except:
   st.sidebar.markdown(
       "<h2 style='text-align: center; color: #ff5500; font-weight: bold;'>B"
@@ -150,7 +166,7 @@ st.markdown("نظام التدقيق، مراجعة الموردين، وإرس�
 st.markdown("---")
 
 
-# دالة قراءة ملف الإكسل مع مؤشر تحميل لمنع القلق
+# دالة قراءة ملف الإكسل مع مؤشر تحميل
 @st.cache_data
 def load_data():
   excel_files = glob.glob("*.xlsx") + glob.glob("*.xls") + glob.glob("*.xlsm")
@@ -225,7 +241,7 @@ if data_loaded:
   )
 
   if supplier_col:
-    # --- الفلاتر الأساسية بترتيب شيك واحترافي ---
+    # --- الفلاتر الأساسية ---
     st.markdown("### 🔍 فلاتر البحث والتدقيق")
     col_sup, col_date, col_store = st.columns(3)
 
@@ -263,7 +279,6 @@ if data_loaded:
     if not selected_suppliers:
       st.warning("⚠️ برجاء اختيار مورد واحد على الأقل للبدء في العرض.")
     else:
-      # تطبيق الفلاتر على الداتا الأساسية
       filtered_df = df[df[supplier_col].astype(str).isin(selected_suppliers)]
 
       if date_range and len(date_range) == 2 and date_col:
@@ -278,7 +293,6 @@ if data_loaded:
             filtered_df[store_col].astype(str) == selected_store
         ]
 
-      # تجهيز المتغيرات الافتراضية لعرض التفاصيل والأصناف
       final_selected_df = filtered_df.copy()
 
       # --- خيار عرض التفاصيل (الأصناف والكميات مع بوكسات تحديد) ---
@@ -328,17 +342,17 @@ if data_loaded:
             if is_checked:
               selected_item_rows.append(item_name)
 
-          # تحديث الداتا بناءً على الأصناف المحددة فقط
           final_selected_df = filtered_df[
               filtered_df[desc_col].astype(str).isin(selected_item_rows)
           ]
         else:
           st.dataframe(filtered_df, use_container_width=True)
 
-      # --- عرض الإجمالي العام للقطاع (يتحدث أوتوماتيك بناءً على الأصناف المحددة) ---
+      # --- الإجماليات المثبتة (تتحدث فوراً مع كل علامة صح) ---
       st.markdown("---")
+      st.markdown('<div class="sticky-metrics">', unsafe_allow_html=True)
       st.markdown(
-          f"### 📌 الإجمالي العام للقطاع للموردين والأصناف المحددة:"
+          f"### 📌 الإجمالي العام المعتمد للقطاع للموردين والمحدد:"
           f" `{', '.join(selected_suppliers)}`"
       )
 
@@ -355,19 +369,21 @@ if data_loaded:
       )
 
       m1, m2, m3 = st.columns(3)
-      m1.metric("📦 إجمالي عدد الحركات المعتمدة", total_records)
-      m2.metric("📊 إجمالي الكميات المطلوبة", f"{total_quantity:,.0f}")
+      m1.metric("📦 إجمالي عدد الحركات", total_records)
+      m2.metric("📊 إجمالي الكميات المعتمدة", f"{total_quantity:,.0f}")
       if sales_col:
         m3.metric("💰 إجمالي المبيعات", f"{total_sales_val:,.2f}")
+      st.markdown("</div>", unsafe_allow_html=True)
 
-      # --- قسم إرسال البريد الإلكتروني للاعتماد أوتوماتيك ---
+      # --- قسم إرسال البريد الإلكتروني عبر حساب الجيميل (`yahia20018@gmail.com`) ---
       st.markdown("---")
-      st.markdown("### ✉️ إرسال اعتماد المراجعة عبر البريد الإلكتروني")
+      st.markdown(
+          "### ✉️ إرسال اعتماد المراجعة عبر البريد الإلكتروني (Gmail Integration)"
+      )
 
+      # تثبيت الإيميل المرسل منه على الجيميل الخاص بك
       sender_email = st.text_input(
-          "البريد المرسل منه (Sender):",
-          value=st.session_state.get("email", "yahia.emam@btech.com"),
-          disabled=True,
+          "البريد المرسل منه (Sender Gmail):", value="yahia20018@gmail.com"
       )
 
       st.markdown("**البريد المرسل إليهم (Recipients):**")
@@ -382,9 +398,9 @@ if data_loaded:
         mail_3 = st.text_input("المرسل إليه (3 - اختياري):", value="")
 
       recipients_list = [m.strip() for m in [mail_1, mail_2, mail_3] if m.strip()]
-      recipients_str = ", ".join(recipients_list)
+      recipients_str = ",".join(recipients_list)
 
-      if st.button("🚀 اعتماد وإرسال تفاصيل المراجعة رسمياً"):
+      if st.button("🚀 اعتماد وإرسال تفاصيل المراجعة رسمياً عبر Gmail"):
         if final_selected_df.empty:
           st.warning(
               "⚠️ لا توجد أصناف محددة أو بيانات مطابقة للفلاتر الحالية للإرسال."
@@ -394,17 +410,18 @@ if data_loaded:
         else:
           st.balloons()
 
-          # بناء محتوى البريد الإلكتروني وفتحه أوتوماتيك لإرسال الميل
+          # تجهيز رابط Gmail Web Compose لإرسال الميل بشكل مباشر وسلس
           period_str = (
               f"من {date_range[0]} إلى {date_range[1]}"
               if date_range and len(date_range) == 2
               else "كل الفترات"
           )
-          email_subject = (
+          email_subject = urllib.parse.quote(
               "B.TECH - اعتماد مراجعة مشتريات الموردين (Revenue Follow Up)"
           )
-          email_body = (
+          email_body = urllib.parse.quote(
               f"مرحباً,\n\nتم اعتماد مراجعة المشتريات للقطاع بالبيانات الآتية:\n"
+              f"- مرسل من: {sender_email}\n"
               f"- الموردون المعتمدون: {', '.join(selected_suppliers)}\n"
               f"- الفترة الزمنية: {period_str}\n"
               f"- إجمالي الحركات المعتمدة: {len(final_selected_df)}\n"
@@ -413,20 +430,20 @@ if data_loaded:
               f"مع تحيات قسم Revenue Follow Up - B.TECH"
           )
 
-          import urllib.parse
+          gmail_link = f"https://mail.google.com/mail/?view=cm&fs=1&to={recipients_str}&su={email_subject}&body={email_body}"
 
-          mailto_link = f"mailto:{recipients_str}?subject={urllib.parse.quote(email_subject)}&body={urllib.parse.quote(email_body)}"
-
-          # كود جافاسكريبت لفتح عميل البريد أوتوماتيك لحظياً عند الضغط
-          js_code = f"""
+          # فتح نافذة Gmail أوتوماتيك لإرسال الميل فوراً
+          js_redirect = f"""
                 <script>
-                    window.location.href = "{mailto_link}";
+                    window.open("{gmail_link}", "_blank");
                 </script>
                 """
-          st.components.v1.html(js_code, height=0)
+          st.components.v1.html(js_redirect, height=0)
+
           st.success(
-              f"✅ تم معالجة وإرسال الاعتماد أوتوماتيك من **{sender_email}** إلى"
-              f" الإيميلات: `{recipients_str}` وتم فتح برنامج البريد الخاص بك!"
+              f"✅ تم تجهيز رسالة الاعتماد بنجاح! تم فتح نافذة Gmail لإرسال"
+              f" الميل مباشرة من حسابك ({sender_email}) إلى:"
+              f" `{recipients_str}`"
           )
 
   else:
