@@ -1,8 +1,6 @@
 from datetime import datetime
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 import glob
-import smtplib
+import urllib.parse
 import pandas as pd
 import streamlit as st
 
@@ -35,18 +33,20 @@ st.markdown(
         color: white;
         padding: 15px;
         border-radius: 10px;
-        font-size: 24px;
+        font-size: 22px;
         font-weight: bold;
         letter-spacing: 2px;
         margin-bottom: 20px;
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
     }
-    .metric-card {
+    /* تثبيت الإجماليات في أعلى الصفحة لتكون مرئية دائماً أثناء التحديد */
+    .sticky-summary {
         background-color: #ffffff;
-        padding: 15px;
-        border-radius: 10px;
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.05);
-        border-right: 5px solid #ff5500;
-        margin-bottom: 15px;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.08);
+        border-right: 6px solid #ff5500;
+        margin-bottom: 25px;
     }
     </style>
 """,
@@ -113,13 +113,17 @@ def check_login():
 if not check_login():
   st.stop()
 
-# --- الشريط الجانبي وشعار B.TECH النصي الاحترافي ---
+# --- الشريط الجانبي وشعار B.TECH الاحترافي ---
 st.sidebar.markdown(
     f"👤 **المستخدم:** {st.session_state.username}\n\n📌"
     f" **الصلاحية:** {st.session_state.role}"
 )
 st.sidebar.markdown("---")
-st.sidebar.markdown('<div class="btech-logo">B . TECH</div>', unsafe_allow_html=True)
+st.sidebar.markdown(
+    '<div class="btech-logo">B . TECH <br><span'
+    ' style="font-size:12px; font-weight:normal;">Revenue Control</span></div>',
+    unsafe_allow_html=True,
+)
 st.sidebar.markdown("---")
 
 if st.session_state.username == "yahia":
@@ -290,7 +294,7 @@ if data_loaded:
 
       final_selected_df = filtered_df.copy()
 
-      # --- خيار عرض التفاصيل ---
+      # --- خيار عرض وتحديد تفاصيل الأصناف ---
       st.markdown("---")
       show_details = st.checkbox(
           "📋 عرض تفاصيل الأصناف (اختر المنتجات المراد مراجعتها واعتمادها)"
@@ -328,19 +332,19 @@ if data_loaded:
               )
             with c_name:
               st.markdown(
-                  f"<b style='font-size:16px; color:#333;'>{item_name}</b>",
+                  f"<b style='font-size:17px; color:#222;'>{item_name}</b>",
                   unsafe_allow_html=True,
               )
             with c_qty:
               st.markdown(
-                  f"<b style='font-size:16px; color:#1f3bb3;'>الكمية:"
+                  f"<b style='font-size:17px; color:#1f3bb3;'>الكمية:"
                   f" {item_qty:,.0f}</b>",
                   unsafe_allow_html=True,
               )
             with c_sales:
               if sales_col:
                 st.markdown(
-                    f"<b style='font-size:16px; color:#ff5500;'>المبيعات:"
+                    f"<b style='font-size:17px; color:#ff5500;'>المبيعات:"
                     f" {item_sales:,.2f}</b>",
                     unsafe_allow_html=True,
                 )
@@ -354,8 +358,9 @@ if data_loaded:
         else:
           st.dataframe(filtered_df, use_container_width=True)
 
-      # --- الإجماليات في الأعلى (تتحدث أوتوماتيك) ---
+      # --- الإجماليات مثبتة في الأعلى وواضحة جداً وتتحدث أوتوماتيك ---
       st.markdown("---")
+      st.markdown('<div class="sticky-summary">', unsafe_allow_html=True)
       st.markdown(
           f"### 📌 الإجمالي العام المعتمد للقطاع للموردين والمحدد:"
           f" `{', '.join(selected_suppliers)}`"
@@ -378,25 +383,14 @@ if data_loaded:
       m2.metric("📊 إجمالي الكميات المعتمدة", f"{total_quantity:,.0f}")
       if sales_col:
         m3.metric("💰 إجمالي المبيعات", f"{total_sales_val:,.2f}")
+      st.markdown("</div>", unsafe_allow_html=True)
 
-      # --- قسم إرسال البريد الإلكتروني الفعلي أوتوماتيك ---
+      # --- قسم إرسال البريد الإلكتروني السلس عبر Gmail (بدون باسوردات معقدة) ---
       st.markdown("---")
-      st.markdown(
-          "### ✉️ إرسال اعتماد المراجعة عبر البريد الإلكتروني (Automated"
-          " Dispatch)"
-      )
+      st.markdown("### ✉️ إرسال اعتماد المراجعة عبر البريد الإلكتروني")
 
       sender_email = st.text_input(
-          "البريد المرسل منه (Sender Gmail):", value="yahia20018@gmail.com"
-      )
-      # ملاحظة أمان: لتحقيق الإرسال التلقائي من جيميل، يرجى استخدام App Password من إعدادات حساب جوجل الخاص بك
-      sender_password = st.text_input(
-          "كلمة مرور التطبيق لبريد جيميل (Gmail App Password):",
-          type="password",
-          help=(
-              "لإرسال الأيميل تلقائياً، ضع هنا App Password الخاصة بحسابك في"
-              " Google."
-          ),
+          "البريد المرسل منه (Sender):", value="yahia20018@gmail.com"
       )
 
       st.markdown("**البريد المرسل إليهم (Recipients):**")
@@ -411,67 +405,53 @@ if data_loaded:
         mail_3 = st.text_input("المرسل إليه (3 - اختياري):", value="")
 
       recipients_list = [m.strip() for m in [mail_1, mail_2, mail_3] if m.strip()]
+      recipients_str = ",".join(recipients_list)
 
-      if st.button("🚀 إرسال الاعتماد نهائياً عبر البريد الآن"):
+      if st.button("🚀 اعتماد وإرسال تفاصيل المراجعة رسمياً عبر Gmail"):
         if final_selected_df.empty:
           st.warning(
               "⚠️ لا توجد أصناف محددة أو بيانات مطابقة للفلاتر الحالية للإرسال."
           )
         elif not recipients_list:
           st.warning("⚠️ برجاء كتابة بريد إلكتروني واحد على الأقل للمرسل إليه.")
-        elif not sender_password:
-          st.warning(
-              "⚠️ برجاء إدخال كلمة مرور التطبيق (App Password) الخاصة بـ Gmail"
-              " لإتمام الإرسال الفعلي."
-          )
         else:
-          try:
-            with st.spinner(
-                "⏳ جاري إرسال البريد الإلكتروني عبر السيرفر..."
-            ):
-              msg = MIMEMultipart()
-              msg["From"] = sender_email
-              msg["To"] = ", ".join(recipients_list)
-              msg["Subject"] = (
-                  "B.TECH - اعتماد مراجعة مشتريات الموردين (Revenue Follow Up)"
-              )
+          st.balloons()
 
-              period_str = (
-                  f"من {date_range[0]} إلى {date_range[1]}"
-                  if date_range and len(date_range) == 2
-                  else "كل الفترات"
-              )
-              body = (
-                  f"مرحباً,\n\nتم اعتماد مراجعة المشتريات للقطاع بالبيانات الآتية:\n"
-                  f"- مرسل من حساب: {sender_email}\n"
-                  f"- الموردون المعتمدون: {', '.join(selected_suppliers)}\n"
-                  f"- الفترة الزمنية: {period_str}\n"
-                  f"- إجمالي الحركات المعتمدة: {len(final_selected_df)}\n"
-                  f"- إجمالي الكميات المعتمدة: {total_quantity:,.0f}\n"
-                  f"- إجمالي القيمة: {total_sales_val:,.2f}\n\n"
-                  f"مع تحيات قسم Revenue Follow Up - B.TECH"
-              )
-              msg.attach(MIMEText(body, "plain", "utf-8"))
+          period_str = (
+              f"من {date_range[0]} إلى {date_range[1]}"
+              if date_range and len(date_range) == 2
+              else "كل الفترات"
+          )
+          email_subject = urllib.parse.quote(
+              "B.TECH - اعتماد مراجعة مشتريات الموردين (Revenue Follow Up)"
+          )
+          email_body = urllib.parse.quote(
+              f"مرحباً,\n\nتم اعتماد مراجعة المشتريات للقطاع بالبيانات الآتية:\n"
+              f"- مرسل من حساب: {sender_email}\n"
+              f"- الموردون المعتمدون: {', '.join(selected_suppliers)}\n"
+              f"- الفترة الزمنية: {period_str}\n"
+              f"- إجمالي الحركات المعتمدة: {len(final_selected_df)}\n"
+              f"- إجمالي الكميات المعتمدة: {total_quantity:,.0f}\n"
+              f"- إجمالي القيمة: {total_sales_val:,.2f}\n\n"
+              f"مع تحيات قسم Revenue Follow Up - B.TECH"
+          )
 
-              # الاتصال بسيرفر SMTP الخاص بجيميل وإرسال الرسالة
-              server = smtplib.SMTP("smtp.gmail.com", 587)
-              server.starttls()
-              server.login(sender_email, sender_password)
-              server.sendmail(
-                  sender_email, recipients_list, msg.as_string()
-              )
-              server.quit()
+          gmail_link = f"https://mail.google.com/mail/?view=cm&fs=1&to={recipients_str}&su={email_subject}&body={email_body}"
 
-            st.balloons()
-            st.success(
-                f"🎉 تم إرسال البريد الإلكتروني بنجاح تام من ({sender_email})"
-                f" إلى العناوين: `{', '.join(recipients_list)}`!"
-            )
-          except Exception as mail_err:
-            st.error(
-                f"❌ حدث خطأ أثناء إرسال البريد: {mail_err}. تأكد من تفعيل"
-                " App Password بشكل صحيح."
-            )
+          st.markdown(
+              f'<a href="{gmail_link}" target="_blank"><button'
+              ' style="background-color:#ff5500; color:white; padding:14px'
+              ' 24px; border:none; border-radius:8px; font-weight:bold; font-size:'
+              ' 17px; cursor:pointer; width:100%;">📧 اضغط هنا لفتح نافذة Gmail'
+              ' وإرسال الاعتماد فوراً</button></a>',
+              unsafe_allow_html=True,
+          )
+
+          st.success(
+              f"✅ تم تجهيز رسالة الاعتماد بنجاح من حسابك ({sender_email}) إلى"
+              f" العناوين: `{recipients_str}`. اضغط على الزر البرتقالي أعلاه لفتح"
+              " Gmail وإرسالها فوراً!"
+          )
 
   else:
     st.error("⚠️ لم يتم العثور على عمود المورد (Supplier) في ملف الإكسل المرفوع.")
