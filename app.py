@@ -1,3 +1,4 @@
+import glob
 import pandas as pd
 import streamlit as st
 
@@ -91,21 +92,29 @@ st.markdown(
 st.markdown("---")
 
 
-# دالة لقراءة ملف الإكسل الثابت من المستودع أوتوماتيك
+# دالة ذكية للبحث عن أي ملف إكسل مرفوع في المستودع وقراءته تلقائياً
 @st.cache_data
 def load_data():
-  # ضع هنا اسم ملف الإكسل كما رفعته تماماً على جيت هاب (مثلاً data.xlsx)
-  file_name = "data.xlsx"  # غير الاسم لاسم ملفك الفعلي المرفوع على جيت هاب
+  excel_files = glob.glob("*.xlsx") + glob.glob("*.xls") + glob.glob("*.xlsm")
+  if not excel_files:
+    raise FileNotFoundError(
+        "لم يتم العثور على أي ملف إكسل مرفوع في مستودع GitHub."
+    )
+
+  # يختار أول ملف إكسل يلاقيه
+  file_name = excel_files[0]
   df = pd.read_excel(file_name)
   df.columns = df.columns.str.strip()
-  return df
+  return df, file_name
 
 
 try:
-  df = load_data()
-  st.success("✅ تم جلب الداتا الشهرية بنجاح وجاهزة للاستعلام والاعتماد!")
+  df, detected_file = load_data()
+  st.success(
+      f"✅ تم قراءة الملف بنجاح (`{detected_file}`) وجاهز للاستعلام والاعتماد!"
+  )
 
-  # البحث الذكي عن أسماء الأعمدة الأساسية
+  # البحث الذكي عن أسماء الأعمدة الأساسية (يدعم إنجليزي وعربي)
   supplier_col = next(
       (c for c in df.columns if "supplie" in c.lower() or "مورد" in c), None
   )
@@ -116,7 +125,10 @@ try:
       (
           c
           for c in df.columns
-          if "store" in c.lower() or "source" in c.lower() or "فرع" in c
+          if "store" in c.lower()
+          or "source" in c.lower()
+          or "فرع" in c
+          or "trx" in c.lower()
       ),
       None,
   )
@@ -161,9 +173,7 @@ try:
         stores_list = ["الكل"] + sorted(
             df[store_col].dropna().unique().astype(str).tolist()
         )
-        selected_store = st.selectbox(
-            "🏬 اختر الفرع (Source Store):", options=stores_list
-        )
+        selected_store = st.selectbox("🏬 اختر الفرع / المخزن:", options=stores_list)
       else:
         selected_store = "الكل"
 
@@ -240,10 +250,13 @@ try:
           " عبر البريد الإلكتروني بنجاح!"
       )
   else:
-    st.error("⚠️ لم يتم العثور على عمود المورد (Supplier) في ملف الإكسل الثابت.")
+    st.error(
+        "⚠️ لم يتم العثور على عمود المورد في الملف. الأعمدة الموجودة في"
+        f" شيت الإكسل هي: {list(df.columns)}"
+    )
 
 except Exception as e:
-  st.error(
-      f"⚠️ برجاء التأكد من رفع ملف الإكسل في مستودع GitHub وتسميته بشكل صحيح."
-      f" الخطأ: {e}"
+  st.warning(
+      "⚠️ برجاء التأكد من رفع ملف إكسل واحد على الأقل داخل مستودع GitHub بجانب"
+      f" الكود. التفاصيل: {e}"
   )
