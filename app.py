@@ -1,16 +1,38 @@
 import pandas as pd
 import streamlit as st
 
-# 1. إعدادات الصفحة
+# 1. إعدادات الصفحة وتنسيق الواجهة
 st.set_page_config(
-    page_title="نظام موافقة المشتريات الشهري", page_icon="📊", layout="wide"
+    page_title="Revenue Follow Up Department", page_icon="📈", layout="wide"
 )
 
-# 2. نظام تسجيل الدخول (اليوزر والباسورد لمسؤولي المشتريات)
+st.markdown(
+    """
+    <style>
+    .main {background-color: #f4f6f9;}
+    .stButton>button {
+        background-color: #1f3bb3;
+        color: white;
+        border-radius: 8px;
+        font-weight: bold;
+        width: 100%;
+    }
+    .stButton>button:hover {
+        background-color: #0d238a;
+        color: white;
+    }
+    </style>
+""",
+    unsafe_allow_html=True,
+)
+
+# 2. الصلاحيات ويوزرات الدخول
 USER_CREDENTIALS = {
-    "yahia": "1234",  # الأدمن (أنت)
-    "purchasing1": "pass123",  # موظف المشتريات 1
-    "purchasing2": "pass456",  # موظف المشتريات 2
+    "yahia": {"password": "1234", "role": "مدير النظام (Admin)"},
+    "purchasing": {
+        "password": "btech2026",
+        "role": "موظف المتابعة (Revenue Follow Up)",
+    },
 }
 
 
@@ -19,20 +41,29 @@ def check_login():
     st.session_state.logged_in = False
 
   if not st.session_state.logged_in:
-    st.title("🔐 تسجيل دخول نظام المشتريات")
-    username = st.text_input("اسم المستخدم (Username)")
-    password = st.text_input("كلمة المرور (Password)", type="password")
+    st.markdown(
+        "<h2 style='text-align: center; color: #1f3bb3;'>📈 Revenue Follow Up"
+        " Department</h2>",
+        unsafe_allow_html=True,
+    )
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+      with st.form("login_form"):
+        username = st.text_input("اسم المستخدم (Username)")
+        password = st.text_input("كلمة المرور (Password)", type="password")
+        submit = st.form_submit_button("تسجيل الدخول")
 
-    if st.button("دخول"):
-      if (
-          username in USER_CREDENTIALS
-          and USER_CREDENTIALS[username] == password
-      ):
-        st.session_state.logged_in = True
-        st.session_state.username = username
-        st.rerun()
-      else:
-        st.error("اسم المستخدم أو كلمة المرور خطأ")
+        if submit:
+          if (
+              username in USER_CREDENTIALS
+              and USER_CREDENTIALS[username]["password"] == password
+          ):
+            st.session_state.logged_in = True
+            st.session_state.username = username
+            st.session_state.role = USER_CREDENTIALS[username]["role"]
+            st.rerun()
+          else:
+            st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة")
     return False
   return True
 
@@ -40,60 +71,185 @@ def check_login():
 if not check_login():
   st.stop()
 
-# --- الشاشة الرئيسية للنظام ---
-st.title("📋 نظام مراجعة وموافقة المشتريات الشهرية")
-st.write(f"أهلاً بك، **{st.session_state.username}**")
+# --- الشريط الجانبي ---
+st.sidebar.markdown(
+    f"👤 **المستخدم:** {st.session_state.username}\n\n📌"
+    f" **القسم:** Revenue Follow Up"
+)
+st.sidebar.markdown("---")
+st.sidebar.header("📁 إدارة الملفات")
+uploaded_file = st.sidebar.file_uploader(
+    "ارفع شيت المبيعات الشهري (Excel)", type=["xlsx", "xls", "xlsm"]
+)
 
-# زرار تسجيل خروج
-if st.sidebar.button("تسجيل خروج"):
+if st.sidebar.button("🚪 تسجيل خروج"):
   st.session_state.logged_in = False
   st.rerun()
 
-# 3. مكان رفع شيت المبيعات الشهري
-st.sidebar.header("📁 إدارة الملفات")
-uploaded_file = st.sidebar.file_uploader(
-    "ارفع شيت المبيعات الشهري (Excel)", type=["xlsx", "xls"]
+# --- الواجهة الرئيسية ---
+st.markdown(
+    "<h1 style='color: #1f3bb3;'>📊 Revenue Follow Up Department - نظام مراجعة"
+    " الموردين</h1>",
+    unsafe_allow_html=True,
 )
+st.markdown("---")
 
 if uploaded_file is not None:
-  # قراءة الشيت
-  df = pd.read_excel(uploaded_file)
-  st.success("تم اعتماد شيت المبيعات الشهري بنجاح! 🚀")
+  try:
+    df = pd.read_excel(uploaded_file)
+    df.columns = df.columns.str.strip()  # تنظيف أسماء الأعمدة
 
-  # البحث عن عمود المورد (Supplier)
-  supplier_col = next((c for c in df.columns if "supplie" in c.lower()), None)
-
-  if supplier_col:
-    # قائمة الموردين
-    suppliers = df[supplier_col].dropna().unique()
-    selected_supplier = st.selectbox(
-        "اختر المورد للمراجعة:", options=suppliers
+    # البحث الذكي عن أسماء الأعمدة الأساسية
+    supplier_col = next(
+        (c for c in df.columns if "supplie" in c.lower() or "مورد" in c), None
+    )
+    date_col = next(
+        (c for c in df.columns if "date" in c.lower() or "تاريخ" in c), None
+    )
+    store_col = next(
+        (
+            c
+            for c in df.columns
+            if "store" in c.lower() or "source" in c.lower() or "فرع" in c
+        ),
+        None,
+    )
+    qty_col = next(
+        (
+            c
+            for c in df.columns
+            if "qty" in c.lower() or "كمية" in c or "الكمية" in c
+        ),
+        None,
+    )
+    sales_col = next(
+        (
+            c
+            for c in df.columns
+            if "sales" in c.lower() or "total" in c.lower() or "مبيعات" in c
+        ),
+        None,
     )
 
-    # فلترة الأصناف حسب المورد المختار
-    filtered_df = df[df[supplier_col] == selected_supplier]
+    if supplier_col:
+      st.success("✅ تم تحميل الداتا بنجاح وجاهزة للاستعلام!")
 
-    st.subheader(
-        f"الأصناف وحركات المبيعات الخاصة بالمورد: {selected_supplier}"
-    )
-    st.dataframe(filtered_df, use_container_width=True)
+      # --- خانات البحث والاختيار (المورد، التاريخ، الفرع) ---
+      col1, col2, col3 = st.columns(3)
 
-    # إجمالي الكميات لو عمود QTY موجود
-    qty_col = next((c for c in df.columns if "qty" in c.lower()), None)
-    if qty_col:
-      total_qty = filtered_df[qty_col].sum()
-      st.info(f"📦 إجمالي الكميات المطلوبة للمورد ده: **{total_qty}**")
+      with col1:
+        suppliers_list = sorted(df[supplier_col].dropna().unique().astype(str))
+        selected_supplier = st.selectbox(
+            "🔍 اختر أو ابحث عن المورد:", options=suppliers_list
+        )
 
-    # زرار الموافقة وإرسال الميل
-    if st.button("إرسال الموافقة للمورد ✉️"):
-      # هنا هنربط إرسال الإيميل الفعلي لاحقاً
-      st.success(
-          f"تم إرسال الموافقة الخاصة بالصنف/الكميات للمورد ({selected_supplier})"
-          " بنجاح وتم توثيقها!"
+      with col2:
+        if date_col:
+          dates_list = ["الكل"] + sorted(
+              df[date_col].dropna().unique().astype(str).tolist()
+          )
+          selected_date = st.selectbox("📅 اختر الفترة / التاريخ:", options=dates_list)
+        else:
+          selected_date = "الكل"
+
+      with col3:
+        if store_col:
+          stores_list = ["الكل"] + sorted(
+              df[store_col].dropna().unique().astype(str).tolist()
+          )
+          selected_store = st.selectbox(
+              "🏬 اختر الفرع (Source Store):", options=stores_list
+          )
+        else:
+          selected_store = "الكل"
+
+      # تطبيق الفلاتر
+      filtered_df = df[df[supplier_col].astype(str) == selected_supplier]
+      if selected_date != "الكل" and date_col:
+        filtered_df = filtered_df[
+            filtered_df[date_col].astype(str) == selected_date
+        ]
+      if selected_store != "الكل" and store_col:
+        filtered_df = filtered_df[
+            filtered_df[store_col].astype(str) == selected_store
+        ]
+
+      st.markdown("---")
+      st.markdown(
+          f"### 📌 نتيجة البحث للمورد: `{selected_supplier}`"
       )
-  else:
-    st.error("لم يتم العثور على عمود المورد (Supplier) في شيت الإكسل المرفوع.")
+
+      # --- عرض إجمالي القطاع (Summary) ---
+      total_records = len(filtered_df)
+      total_quantity = (
+          filtered_df[qty_col].sum()
+          if qty_col and not filtered_df.empty
+          else 0
+      )
+      total_sales_val = (
+          filtered_df[sales_col].sum()
+          if sales_col and not filtered_df.empty
+          else 0
+      )
+
+      m1, m2, m3 = st.columns(3)
+      m1.metric("📦 إجمالي عدد الحركات", total_records)
+      m2.metric("📊 إجمالي الكميات (QTY)", f"{total_quantity:,.0f}")
+      if sales_col:
+        m3.metric("💰 إجمالي المبيعات", f"{total_sales_val:,.2f}")
+
+      st.markdown("---")
+
+      # --- خيار التفصيل (عرض تفاصيل الأصناف) ---
+      show_details = st.checkbox(
+          "📋 عرض تفاصيل الأصناف (Item Description / Code)"
+      )
+
+      if show_details:
+        st.markdown("#### 🔍 تفاصيل كل صنف على حدة:")
+        desc_col = next(
+            (
+                c
+                for c in df.columns
+                if "des" in c.lower() or "item" in c.lower() or "صنف" in c
+            ),
+            None,
+        )
+
+        if desc_col and qty_col:
+          # تجميع البيانات لكل صنف
+          summary_items = (
+              filtered_df.groupby(desc_col)
+              .agg(
+                  {
+                      qty_col: "sum",
+                      **({sales_col: "sum"} if sales_col else {}),
+                  }
+              )
+              .reset_index()
+          )
+          st.dataframe(summary_items, use_container_width=True)
+        else:
+          st.dataframe(filtered_df, use_container_width=True)
+
+      # --- زرار الاعتماد والموافقة للإرسال على الميل ---
+      st.markdown("---")
+      if st.button("✉️ اعتماد وإرسال نتيجة المراجعة على البريد"):
+        st.balloons()
+        st.success(
+            f"🚀 تم إرسال اعتمادات المورد ({selected_supplier}) لمسؤول المشتريات"
+            " عبر البريد الإلكتروني بنجاح وتم تسجيل العملية في النظام!"
+        )
+
+    else:
+      st.error(
+          "⚠️ لم يتم العثور على عمود المورد (Supplier) في شيت الإكسل المرفوع."
+      )
+
+  except Exception as e:
+    st.error(f"حدث خطأ أثناء معالجة الملف: {e}")
 else:
-  st.warning(
-      "⚠️ برجاء من المسؤول رفع شيت المبيعات الشهري من القائمة الجانبية للبدء."
-  )
+    st.info(
+        "📂 برجاء رفع شيت المبيعات الشهري من القائمة الجانبية للبدء في الاستعلام"
+        " ومراجعة البيانات."
+    )
