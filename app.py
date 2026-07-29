@@ -14,71 +14,52 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    /* خلفية عامة احترافية */
-    .main {background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;}
+    /* خلفية عامة فخمة */
+    .main {background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;}
     
-    /* تصميم الأزرار */
-    .stButton>button {
+    /* تصميم الهيدر الرئيسي */
+    .main-header {
         background: linear-gradient(135deg, #1f3bb3 0%, #0d238a 100%);
         color: white;
-        border-radius: 10px;
-        font-weight: bold;
-        width: 100%;
-        padding: 0.6rem;
-        border: none;
-        box-shadow: 0 4px 6px rgba(31, 59, 179, 0.2);
-        transition: all 0.3s ease;
-    }
-    .stButton>button:hover {
-        background: linear-gradient(135deg, #ff5500 0%, #e04800 100%);
-        box-shadow: 0 6px 12px rgba(255, 85, 0, 0.3);
-        color: white;
+        padding: 25px;
+        border-radius: 15px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(31, 59, 179, 0.2);
     }
 
-    /* شعار B.TECH احترافي في القائمة الجانبية */
+    /* شعار B.TECH في القائمة الجانبية */
     .btech-logo {
         text-align: center;
         background: linear-gradient(135deg, #1f3bb3 0%, #0d238a 100%);
         color: white;
         padding: 20px;
-        border-radius: 15px;
-        font-size: 26px;
+        border-radius: 12px;
+        font-size: 24px;
         font-weight: bold;
-        letter-spacing: 3px;
+        letter-spacing: 2px;
         margin-bottom: 20px;
-        box-shadow: 0px 6px 15px rgba(31,59,179,0.3);
         border-bottom: 4px solid #ff5500;
     }
 
-    /* بطاقة الإجماليات المتحركة */
-    .side-metric-box {
-        background-color: #ffffff;
-        padding: 22px;
-        border-radius: 15px;
-        box-shadow: 0px 6px 20px rgba(0,0,0,0.06);
-        border-left: 6px solid #ff5500;
-        margin-bottom: 20px;
-        text-align: center;
-        border-top: 1px solid #eaeaea;
-        border-bottom: 1px solid #eaeaea;
-        border-right: 1px solid #eaeaea;
-    }
-
-    /* كروت الأقسام والتدقيق */
-    .section-card {
+    /* صندوق الإجماليات المتحرك بجوار الأصناف */
+    .metric-card {
         background-color: #ffffff;
         padding: 20px;
         border-radius: 12px;
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.04);
-        margin-bottom: 20px;
-        border: 1px solid #eef0f4;
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.08);
+        border-right: 6px solid #ff5500;
+        border-top: 1px solid #eef0f4;
+        border-bottom: 1px solid #eef0f4;
+        border-left: 1px solid #eef0f4;
+        margin-bottom: 15px;
     }
 
     /* تكبير وتنسيق جملة عرض الأصناف */
-    .details-checkbox label p {
+    .details-title {
         font-size: 20px !important;
-        font-weight: bold !important;
+        font-weight: 800 !important;
         color: #1f3bb3 !important;
+        padding: 10px 0px;
     }
     </style>
 """,
@@ -145,7 +126,7 @@ def check_login():
 if not check_login():
   st.stop()
 
-# --- الشريط الجانبي وشعار B.TECH الفخم ---
+# --- الشريط الجانبي وشعار B.TECH المطور ---
 st.sidebar.markdown(
     f"👤 **المستخدم:** {st.session_state.username}\n\n📌"
     f" **الصلاحية:** {st.session_state.role}"
@@ -153,7 +134,7 @@ st.sidebar.markdown(
 st.sidebar.markdown("---")
 st.sidebar.markdown(
     '<div class="btech-logo">B . TECH <br><span'
-    ' style="font-size:13px; font-weight:normal; letter-spacing:1px; color:#ffccaa;">Revenue'
+    ' style="font-size:12px; font-weight:normal; letter-spacing:1px; color:#ffccaa;">Revenue'
     ' Control</span></div>',
     unsafe_allow_html=True,
 )
@@ -190,18 +171,16 @@ if st.sidebar.button("🚪 تسجيل خروج"):
   st.session_state.logged_in = False
   st.rerun()
 
-# --- الواجهة الرئيسية الاحترافية ---
+# --- الهيدر الرئيسي الاحترافي ---
 st.markdown(
-    "<h1 style='color: #1f3bb3; font-weight: 800;'>📊 B.TECH - Revenue Follow"
-    " Up Department</h1>",
+    """
+    <div class="main-header">
+        <h1 style='color: white; margin: 0; font-weight: 800;'>📊 B.TECH - Revenue Follow Up Department</h1>
+        <p style='color: #e0e6ed; margin: 5px 0 0 0; font-size: 16px;'>نظام التدقيق المالي، مراجعة الموردين، وإرسال الاعتمادات الشهرية بدقة فائقة.</p>
+    </div>
+""",
     unsafe_allow_html=True,
 )
-st.markdown(
-    "<p style='color: #666; font-size: 16px;'>نظام التدقيق المالي، مراجعة"
-    " الموردين، وإرسال الاعتمادات الشهرية بدقة فائقة.</p>",
-    unsafe_allow_html=True,
-)
-st.markdown("---")
 
 
 # دالة قراءة ملف الإكسل
@@ -279,41 +258,44 @@ if data_loaded:
 
   if supplier_col:
     # --- بطاقة الفلاتر الأساسية ---
-    st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    st.markdown("### 🔍 فلاتر البحث والتدقيق")
-    col_sup, col_date, col_store = st.columns(3)
+    with st.container():
+      st.markdown("### 🔍 فلاتر البحث والتدقيق")
+      col_sup, col_date, col_store = st.columns(3)
 
-    with col_sup:
-      all_suppliers = sorted(df[supplier_col].dropna().unique().astype(str))
-      selected_suppliers = st.multiselect(
-          "🔍 اختر أو ابحث عن الموردين:",
-          options=all_suppliers,
-          default=[all_suppliers[0]] if all_suppliers else [],
-      )
+      with col_sup:
+        all_suppliers = sorted(df[supplier_col].dropna().unique().astype(str))
+        selected_suppliers = st.multiselect(
+            "🔍 اختر أو ابحث عن الموردين:",
+            options=all_suppliers,
+            default=[all_suppliers[0]] if all_suppliers else [],
+        )
 
-    with col_date:
-      if date_col:
-        df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
-        valid_dates = df[date_col].dropna()
-        if not valid_dates.empty:
-          min_d, max_d = valid_dates.min().date(), valid_dates.max().date()
-          date_range = st.date_input(
-              "📅 الفترة الزمنية (من - إلى):", value=(min_d, max_d)
-          )
+      with col_date:
+        if date_col:
+          df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+          valid_dates = df[date_col].dropna()
+          if not valid_dates.empty:
+            min_d, max_d = valid_dates.min().date(), valid_dates.max().date()
+            date_range = st.date_input(
+                "📅 الفترة الزمنية (من - إلى):", value=(min_d, max_d)
+            )
+          else:
+            date_range = None
         else:
           date_range = None
-      else:
-        date_range = None
 
-    with col_store:
-      if store_col:
-        stores_list = ["الكل"] + sorted(
-            df[store_col].dropna().unique().astype(str).tolist()
-        )
-        selected_store = st.selectbox("🏬 اختر الفرع / المخزن:", options=stores_list)
-      else:
-        selected_store = "الكل"
-    st.markdown("</div>", unsafe_allow_html=True)
+      with col_store:
+        if store_col:
+          stores_list = ["الكل"] + sorted(
+              df[store_col].dropna().unique().astype(str).tolist()
+          )
+          selected_store = st.selectbox(
+              "🏬 اختر الفرع / المخزن:", options=stores_list
+          )
+        else:
+          selected_store = "الكل"
+
+    st.markdown("---")
 
     if not selected_suppliers:
       st.warning("⚠️ برجاء اختيار مورد واحد على الأقل للبدء في العرض.")
@@ -334,12 +316,15 @@ if data_loaded:
 
       final_selected_df = filtered_df.copy()
 
-      # --- خيار عرض وتحديد تفاصيل الأصناف مع تنسيق فخم ---
-      st.markdown('<div class="section-card details-checkbox">', unsafe_allow_html=True)
-      show_details = st.checkbox(
-          "📋 عرض تفاصيل الأصناف (اختر المنتجات المراد مراجعتها واعتمادها)"
+      # --- خيار عرض وتحديد تفاصيل الأصناف (بخط واضح وبارز) ---
+      st.markdown(
+          '<p class="details-title">📋 عرض تفاصيل الأصناف (اختر المنتجات المراد'
+          " مراجعتها واعتمادها)</p>",
+          unsafe_allow_html=True,
       )
-      st.markdown("</div>", unsafe_allow_html=True)
+      show_details = st.checkbox(
+          "تفعيل عرض الأصناف ومربعات التحديد", value=True
+      )
 
       selected_item_rows = []
 
@@ -360,12 +345,12 @@ if data_loaded:
               .reset_index()
           )
 
-          # تقسيم الشاشة: جدول الأصناف (يسار) ومربعات الإجماليات المتحركة بجوارها (يمين)
+          # تقسيم الشاشة: جدول الأصناف (يسار) ومربعات الإجماليات المتحركة بجوارها مباشرة (يمين)
           col_items_list, col_live_metrics = st.columns([2.3, 1])
 
           with col_items_list:
             st.markdown(
-                "<p style='color:#5500; font-weight:bold; font-size:16px;'>حدد"
+                "<p style='color:#1f3bb3; font-weight:bold; font-size:16px;'>حدد"
                 " الأصناف المطلوبة للاعتماد:</p>",
                 unsafe_allow_html=True,
             )
@@ -384,12 +369,12 @@ if data_loaded:
                 )
               with c_name:
                 st.markdown(
-                    f"<b style='font-size:15px; color:#222;'>{item_name}</b>",
+                    f"<b style='font-size:16px; color:#222;'>{item_name}</b>",
                     unsafe_allow_html=True,
                 )
               with c_qty:
                 st.markdown(
-                    f"<b style='font-size:15px; color:#1f3bb3;'>الكمية:"
+                    f"<b style='font-size:16px; color:#1f3bb3;'>الكمية:"
                     f" {item_qty:,.0f}</b>",
                     unsafe_allow_html=True,
                 )
@@ -402,18 +387,18 @@ if data_loaded:
               filtered_df[desc_col].astype(str).isin(selected_item_rows)
           ]
 
-          # --- الإجماليات المتحركة بجوار الأصناف مباشرة ---
+          # --- الإجماليات المتحركة بجوار الأصناف مباشرة (تتحرك معها) ---
           with col_live_metrics:
             st.markdown(
                 "#### 📊 الإجمالي المعتمد المباشر", unsafe_allow_html=True
             )
-            st.markdown('<div class="side-metric-box">', unsafe_allow_html=True)
+            st.markdown('<div class="metric-card">', unsafe_allow_html=True)
             st.metric(
-                "📦 إجمالي الحركات", f"{len(final_selected_df):,}"
+                "📦 إجمالي الحركات المعتمدة", f"{len(final_selected_df):,}"
             )
             st.markdown("---")
             st.metric(
-                "📊 إجمالي الكميات",
+                "📊 إجمالي الكميات المعتمدة",
                 f"{final_selected_df[qty_col].sum() if qty_col and not final_selected_df.empty else 0:,.0f}",
             )
             if sales_col:
@@ -427,10 +412,9 @@ if data_loaded:
         else:
           st.dataframe(filtered_df, use_container_width=True)
       else:
-        # لو مش مفعل التفاصيل، نعرض كروت الإجماليات بشكل فخم في الأعلى
-        st.markdown('<div class="section-card">', unsafe_allow_html=True)
+        # لو مش مفعل التفاصيل، نعرض كروت الإجماليات بشكل عريض
         st.markdown(
-            f"### 📌 الإجمالي العام للقطاع للموردين والمحدد: `"
+            f"### 📌 الإجمالي العام للقطاع للموردين: `"
             f"{', '.join(selected_suppliers)}`"
         )
         total_records = len(final_selected_df)
@@ -450,10 +434,9 @@ if data_loaded:
         m2.metric("📊 إجمالي الكميات المعتمدة", f"{total_quantity:,.0f}")
         if sales_col:
           m3.metric("💰 إجمالي المبيعات", f"{total_sales_val:,.2f}")
-        st.markdown("</div>", unsafe_allow_html=True)
 
       # --- قسم إرسال البريد الإلكتروني عبر Gmail ---
-      st.markdown('<div class="section-card">', unsafe_allow_html=True)
+      st.markdown("---")
       st.markdown("### ✉️ إرسال اعتماد المراجعة عبر البريد الإلكتروني")
 
       sender_email = st.text_input(
@@ -531,7 +514,6 @@ if data_loaded:
               f" العناوين: `{recipients_str}`. اضغط على الزر البرتقالي أعلاه لفتح"
               " Gmail وإرسالها فوراً!"
           )
-      st.markdown("</div>", unsafe_allow_html=True)
 
   else:
     st.error("⚠️ لم يتم العثور على عمود المورد (Supplier) في ملف الإكسل المرفوع.")
