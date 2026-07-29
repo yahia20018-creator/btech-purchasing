@@ -14,48 +14,71 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    .main {background-color: #f8f9fa;}
+    /* خلفية عامة احترافية */
+    .main {background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;}
+    
+    /* تصميم الأزرار */
     .stButton>button {
-        background-color: #1f3bb3;
+        background: linear-gradient(135deg, #1f3bb3 0%, #0d238a 100%);
         color: white;
-        border-radius: 8px;
+        border-radius: 10px;
         font-weight: bold;
         width: 100%;
         padding: 0.6rem;
+        border: none;
+        box-shadow: 0 4px 6px rgba(31, 59, 179, 0.2);
+        transition: all 0.3s ease;
     }
     .stButton>button:hover {
-        background-color: #ff5500;
+        background: linear-gradient(135deg, #ff5500 0%, #e04800 100%);
+        box-shadow: 0 6px 12px rgba(255, 85, 0, 0.3);
         color: white;
     }
-    /* تصميم فخم ومميز لشعار B.TECH في القائمة الجانبية */
+
+    /* شعار B.TECH احترافي في القائمة الجانبية */
     .btech-logo {
         text-align: center;
         background: linear-gradient(135deg, #1f3bb3 0%, #0d238a 100%);
         color: white;
-        padding: 18px;
-        border-radius: 12px;
-        font-size: 24px;
+        padding: 20px;
+        border-radius: 15px;
+        font-size: 26px;
         font-weight: bold;
         letter-spacing: 3px;
         margin-bottom: 20px;
-        box-shadow: 0px 4px 15px rgba(31,59,179,0.3);
+        box-shadow: 0px 6px 15px rgba(31,59,179,0.3);
         border-bottom: 4px solid #ff5500;
     }
-    /* تكبير وإبراز جملة عرض تفاصيل الأصناف */
-    .details-checkbox label p {
-        font-size: 19px !important;
-        font-weight: bold !important;
-        color: #1f3bb3 !important;
-    }
-    /* تصميم كروت الإجماليات المصغرة لتكون بجوار الأصناف */
+
+    /* بطاقة الإجماليات المتحركة */
     .side-metric-box {
+        background-color: #ffffff;
+        padding: 22px;
+        border-radius: 15px;
+        box-shadow: 0px 6px 20px rgba(0,0,0,0.06);
+        border-left: 6px solid #ff5500;
+        margin-bottom: 20px;
+        text-align: center;
+        border-top: 1px solid #eaeaea;
+        border-bottom: 1px solid #eaeaea;
+        border-right: 1px solid #eaeaea;
+    }
+
+    /* كروت الأقسام والتدقيق */
+    .section-card {
         background-color: #ffffff;
         padding: 20px;
         border-radius: 12px;
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.08);
-        border-left: 5px solid #ff5500;
-        margin-bottom: 15px;
-        text-align: center;
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.04);
+        margin-bottom: 20px;
+        border: 1px solid #eef0f4;
+    }
+
+    /* تكبير وتنسيق جملة عرض الأصناف */
+    .details-checkbox label p {
+        font-size: 20px !important;
+        font-weight: bold !important;
+        color: #1f3bb3 !important;
     }
     </style>
 """,
@@ -122,7 +145,7 @@ def check_login():
 if not check_login():
   st.stop()
 
-# --- الشريط الجانبي وشعار B.TECH المطور ---
+# --- الشريط الجانبي وشعار B.TECH الفخم ---
 st.sidebar.markdown(
     f"👤 **المستخدم:** {st.session_state.username}\n\n📌"
     f" **الصلاحية:** {st.session_state.role}"
@@ -167,12 +190,17 @@ if st.sidebar.button("🚪 تسجيل خروج"):
   st.session_state.logged_in = False
   st.rerun()
 
-# --- الواجهة الرئيسية ---
+# --- الواجهة الرئيسية الاحترافية ---
 st.markdown(
-    "<h1 style='color: #1f3bb3;'>📊 B.TECH - Revenue Follow Up Department</h1>",
+    "<h1 style='color: #1f3bb3; font-weight: 800;'>📊 B.TECH - Revenue Follow"
+    " Up Department</h1>",
     unsafe_allow_html=True,
 )
-st.markdown("نظام التدقيق، مراجعة الموردين، وإرسال الاعتمادات الشهرية بدقة فائقة.")
+st.markdown(
+    "<p style='color: #666; font-size: 16px;'>نظام التدقيق المالي، مراجعة"
+    " الموردين، وإرسال الاعتمادات الشهرية بدقة فائقة.</p>",
+    unsafe_allow_html=True,
+)
 st.markdown("---")
 
 
@@ -250,7 +278,8 @@ if data_loaded:
   )
 
   if supplier_col:
-    # --- الفلاتر الأساسية ---
+    # --- بطاقة الفلاتر الأساسية ---
+    st.markdown('<div class="section-card">', unsafe_allow_html=True)
     st.markdown("### 🔍 فلاتر البحث والتدقيق")
     col_sup, col_date, col_store = st.columns(3)
 
@@ -284,6 +313,7 @@ if data_loaded:
         selected_store = st.selectbox("🏬 اختر الفرع / المخزن:", options=stores_list)
       else:
         selected_store = "الكل"
+    st.markdown("</div>", unsafe_allow_html=True)
 
     if not selected_suppliers:
       st.warning("⚠️ برجاء اختيار مورد واحد على الأقل للبدء في العرض.")
@@ -304,9 +334,8 @@ if data_loaded:
 
       final_selected_df = filtered_df.copy()
 
-      # --- خيار عرض وتحديد تفاصيل الأصناف (مع تكبير الخط والوضوح) ---
-      st.markdown("---")
-      st.markdown('<div class="details-checkbox">', unsafe_allow_html=True)
+      # --- خيار عرض وتحديد تفاصيل الأصناف مع تنسيق فخم ---
+      st.markdown('<div class="section-card details-checkbox">', unsafe_allow_html=True)
       show_details = st.checkbox(
           "📋 عرض تفاصيل الأصناف (اختر المنتجات المراد مراجعتها واعتمادها)"
       )
@@ -331,13 +360,13 @@ if data_loaded:
               .reset_index()
           )
 
-          # تقسيم الشاشة: عمود الأصناف وعمود الإجماليات المتحركة بجوارها مباشرة
-          col_items_list, col_live_metrics = st.columns([2.2, 1])
+          # تقسيم الشاشة: جدول الأصناف (يسار) ومربعات الإجماليات المتحركة بجوارها (يمين)
+          col_items_list, col_live_metrics = st.columns([2.3, 1])
 
           with col_items_list:
             st.markdown(
-                "<p style='color:#555; font-weight:bold;'>حدد الأصناف المطلوبة"
-                " للاعتماد:</p>",
+                "<p style='color:#5500; font-weight:bold; font-size:16px;'>حدد"
+                " الأصناف المطلوبة للاعتماد:</p>",
                 unsafe_allow_html=True,
             )
             for index, row in items_summary.iterrows():
@@ -345,7 +374,7 @@ if data_loaded:
               item_qty = row[qty_col]
               item_sales = row[sales_col] if sales_col else 0
 
-              c_box, c_name, c_qty = st.columns([0.5, 4.5, 2])
+              c_box, c_name, c_qty = st.columns([0.4, 4.6, 2])
               with c_box:
                 is_checked = st.checkbox(
                     "تحديد",
@@ -355,12 +384,12 @@ if data_loaded:
                 )
               with c_name:
                 st.markdown(
-                    f"<b style='font-size:16px; color:#222;'>{item_name}</b>",
+                    f"<b style='font-size:15px; color:#222;'>{item_name}</b>",
                     unsafe_allow_html=True,
                 )
               with c_qty:
                 st.markdown(
-                    f"<b style='font-size:16px; color:#1f3bb3;'>الكمية:"
+                    f"<b style='font-size:15px; color:#1f3bb3;'>الكمية:"
                     f" {item_qty:,.0f}</b>",
                     unsafe_allow_html=True,
                 )
@@ -398,10 +427,10 @@ if data_loaded:
         else:
           st.dataframe(filtered_df, use_container_width=True)
       else:
-        # لو مش مفعل التفاصيل، نعرض الإجماليات بشكل عريض فوق
-        st.markdown("---")
+        # لو مش مفعل التفاصيل، نعرض كروت الإجماليات بشكل فخم في الأعلى
+        st.markdown('<div class="section-card">', unsafe_allow_html=True)
         st.markdown(
-            f"### 📌 الإجمالي العام للقطاع للموردين: `"
+            f"### 📌 الإجمالي العام للقطاع للموردين والمحدد: `"
             f"{', '.join(selected_suppliers)}`"
         )
         total_records = len(final_selected_df)
@@ -421,9 +450,10 @@ if data_loaded:
         m2.metric("📊 إجمالي الكميات المعتمدة", f"{total_quantity:,.0f}")
         if sales_col:
           m3.metric("💰 إجمالي المبيعات", f"{total_sales_val:,.2f}")
+        st.markdown("</div>", unsafe_allow_html=True)
 
       # --- قسم إرسال البريد الإلكتروني عبر Gmail ---
-      st.markdown("---")
+      st.markdown('<div class="section-card">', unsafe_allow_html=True)
       st.markdown("### ✉️ إرسال اعتماد المراجعة عبر البريد الإلكتروني")
 
       sender_email = st.text_input(
@@ -488,10 +518,11 @@ if data_loaded:
 
           st.markdown(
               f'<a href="{gmail_link}" target="_blank"><button'
-              ' style="background-color:#ff5500; color:white; padding:14px'
-              ' 24px; border:none; border-radius:8px; font-weight:bold; font-size:'
-              ' 17px; cursor:pointer; width:100%;">📧 اضغط هنا لفتح نافذة Gmail'
-              ' وإرسال الاعتماد فوراً</button></a>',
+              ' style="background: linear-gradient(135deg, #ff5500 0%,'
+              ' #e04800 100%); color:white; padding:14px 24px; border:none;'
+              ' border-radius:10px; font-weight:bold; font-size:17px;'
+              ' cursor:pointer; width:100%; box-shadow: 0 4px 10px rgba(255,85,0,0.3);">📧'
+              ' اضغط هنا لفتح نافذة Gmail وإرسال الاعتماد فوراً</button></a>',
               unsafe_allow_html=True,
           )
 
@@ -500,6 +531,7 @@ if data_loaded:
               f" العناوين: `{recipients_str}`. اضغط على الزر البرتقالي أعلاه لفتح"
               " Gmail وإرسالها فوراً!"
           )
+      st.markdown("</div>", unsafe_allow_html=True)
 
   else:
     st.error("⚠️ لم يتم العثور على عمود المورد (Supplier) في ملف الإكسل المرفوع.")
