@@ -14,8 +14,8 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    /* خلفية عامة احترافية ونظيفة */
-    .main {background-color: #f4f7fc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;}
+    /* تغيير خلفية الموقع بالكامل لـ لون رمادي هادئ واحترافي */
+    .stApp {background-color: #edf2f7 !important;}
     
     /* تصميم الهيدر الرئيسي الفخم */
     .main-header {
@@ -27,27 +27,12 @@ st.markdown(
         box-shadow: 0 6px 20px rgba(31, 59, 179, 0.25);
     }
 
-    /* شعار B.TECH في القائمة الجانبية */
-    .btech-logo {
-        text-align: center;
-        background: linear-gradient(135deg, #1f3bb3 0%, #0d238a 100%);
-        color: white;
-        padding: 22px;
-        border-radius: 14px;
-        font-size: 26px;
-        font-weight: 800;
-        letter-spacing: 3px;
-        margin-bottom: 20px;
-        box-shadow: 0px 6px 15px rgba(31,59,179,0.3);
-        border-bottom: 4px solid #ff5500;
-    }
-
-    /* كروت المحتوى (Cards) لشبه مواقع الـ ERP */
+    /* كروت المحتوى (Cards) بخلفية بيضاء وظلال ناعمة */
     .content-card {
         background-color: #ffffff;
         padding: 25px;
         border-radius: 14px;
-        box-shadow: 0px 4px 15px rgba(0,0,0,0.05);
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.06);
         margin-bottom: 20px;
         border: 1px solid #e2e8f0;
     }
@@ -155,18 +140,24 @@ def check_login():
 if not check_login():
   st.stop()
 
-# --- الشريط الجانبي وشعار B.TECH الفخم ---
+# --- الشريط الجانبي وشعار B.TECH الرسمي ---
 st.sidebar.markdown(
     f"👤 **المستخدم:** {st.session_state.username}\n\n📌"
     f" **الصلاحية:** {st.session_state.role}"
 )
 st.sidebar.markdown("---")
-st.sidebar.markdown(
-    '<div class="btech-logo">B . TECH <br><span'
-    ' style="font-size:12px; font-weight:normal; letter-spacing:1px; color:#ffccaa;">Revenue'
-    ' Control</span></div>',
-    unsafe_allow_html=True,
-)
+
+# عرض شعار B.TECH الرسمي بالرابط المباشر
+try:
+  logo_url = "https://i.postimg.cc/MpSTvz9C/images-(1).png"
+  st.sidebar.image(logo_url, use_container_width=True)
+except:
+  st.sidebar.markdown(
+      "<h2 style='text-align: center; color: #ff5500; font-weight: bold;'>B"
+      " . TECH</h2>",
+      unsafe_allow_html=True,
+  )
+
 st.sidebar.markdown("---")
 
 if st.session_state.username == "yahia":
