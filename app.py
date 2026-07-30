@@ -14,25 +14,41 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    /* تغيير خلفية الموقع بالكامل لـ لون رمادي هادئ واحترافي */
-    .stApp {background-color: #edf2f7 !important;}
+    /* خلفية عامة فخمة ونظيفة */
+    .stApp {background-color: #f1f5f9 !important;}
     
-    /* تصميم الهيدر الرئيسي الفخم */
+    /* تصميم الهيدر الرئيسي */
     .main-header {
         background: linear-gradient(135deg, #1f3bb3 0%, #0d238a 100%);
         color: white;
-        padding: 25px 30px;
+        padding: 30px;
         border-radius: 16px;
         margin-bottom: 25px;
-        box-shadow: 0 6px 20px rgba(31, 59, 179, 0.25);
+        box-shadow: 0 8px 25px rgba(31, 59, 179, 0.2);
+        text-align: center;
     }
 
-    /* كروت المحتوى (Cards) بخلفية بيضاء وظلال ناعمة */
+    /* شعار B.TECH النصي الفخم في القائمة الجانبية (بدون صور خارجية) */
+    .sidebar-btech-logo {
+        background: linear-gradient(135deg, #1f3bb3 0%, #0d238a 100%);
+        color: white;
+        padding: 22px;
+        border-radius: 14px;
+        text-align: center;
+        font-size: 28px;
+        font-weight: 900;
+        letter-spacing: 3px;
+        box-shadow: 0 6px 15px rgba(31, 59, 179, 0.3);
+        border-bottom: 5px solid #ff5500;
+        margin-bottom: 20px;
+    }
+
+    /* كروت المحتوى (Cards) الاحترافية */
     .content-card {
         background-color: #ffffff;
         padding: 25px;
         border-radius: 14px;
-        box-shadow: 0px 4px 15px rgba(0,0,0,0.06);
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.05);
         margin-bottom: 20px;
         border: 1px solid #e2e8f0;
     }
@@ -50,7 +66,7 @@ st.markdown(
         margin-bottom: 15px;
     }
 
-    /* تصميم الأزرار العصرية */
+    /* الأزرار العصرية */
     .stButton>button {
         background: linear-gradient(135deg, #1f3bb3 0%, #0d238a 100%);
         color: white;
@@ -68,12 +84,11 @@ st.markdown(
         color: white;
     }
 
-    /* تكبير وتنسيق عنوان تفاصيل الأصناف */
+    /* تنسيق عناوين الأصناف */
     .details-title {
-        font-size: 21px !important;
+        font-size: 20px !important;
         font-weight: 800 !important;
         color: #1f3bb3 !important;
-        padding: 10px 0px;
     }
     </style>
 """,
@@ -140,24 +155,18 @@ def check_login():
 if not check_login():
   st.stop()
 
-# --- الشريط الجانبي وشعار B.TECH الرسمي ---
+# --- الشريط الجانبي وشعار B.TECH النصي الفخم (بدون صور خارجية تسبب مشاكل) ---
 st.sidebar.markdown(
     f"👤 **المستخدم:** {st.session_state.username}\n\n📌"
     f" **الصلاحية:** {st.session_state.role}"
 )
 st.sidebar.markdown("---")
-
-# عرض شعار B.TECH الرسمي بالرابط المباشر
-try:
-  logo_url = "https://i.postimg.cc/MpSTvz9C/images-(1).png"
-  st.sidebar.image(logo_url, use_container_width=True)
-except:
-  st.sidebar.markdown(
-      "<h2 style='text-align: center; color: #ff5500; font-weight: bold;'>B"
-      " . TECH</h2>",
-      unsafe_allow_html=True,
-  )
-
+st.sidebar.markdown(
+    '<div class="sidebar-btech-logo">B . TECH<br><span'
+    ' style="font-size:12px; font-weight:normal; letter-spacing:1px; color:#ffccaa;">Revenue'
+    ' Follow Up</span></div>',
+    unsafe_allow_html=True,
+)
 st.sidebar.markdown("---")
 
 if st.session_state.username == "yahia":
@@ -195,8 +204,8 @@ if st.sidebar.button("🚪 تسجيل خروج"):
 st.markdown(
     """
     <div class="main-header">
-        <h1 style='color: white; margin: 0; font-weight: 800;'>📊 B.TECH - Revenue Follow Up Department</h1>
-        <p style='color: #e0e6ed; margin: 8px 0 0 0; font-size: 16px;'>نظام التدقيق المالي، مراجعة الموردين، وإرسال الاعتمادات الشهرية بدقة فائقة.</p>
+        <h1 style='color: white; margin: 0; font-weight: 800; font-size: 32px;'>B.TECH - Revenue Follow Up Department</h1>
+        <p style='color: #e2e8f0; margin: 10px 0 0 0; font-size: 16px;'>نظام التدقيق المالي، مراجعة الموردين، وإرسال الاعتمادات الشهرية بدقة فائقة.</p>
     </div>
 """,
     unsafe_allow_html=True,
@@ -277,7 +286,7 @@ if data_loaded:
   )
 
   if supplier_col:
-    # --- بطاقة الفلاتر الأساسية داخل كارت ERP ---
+    # --- كارت الفلاتر ---
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
     st.markdown(
         "<h3 style='color: #1f3bb3; margin-top:0;'>🔍 فلاتر البحث والتدقيق</h3>",
@@ -338,16 +347,14 @@ if data_loaded:
 
       final_selected_df = filtered_df.copy()
 
-      # --- خيار عرض وتحديد تفاصيل الأصناف داخل كارت ---
+      # --- كارت عرض وتحديد تفاصيل الأصناف ---
       st.markdown('<div class="content-card">', unsafe_allow_html=True)
       st.markdown(
           '<p class="details-title">📋 عرض تفاصيل الأصناف (اختر المنتجات المراد'
           " مراجعتها واعتمادها)</p>",
           unsafe_allow_html=True,
       )
-      show_details = st.checkbox(
-          "تفعيل عرض الأصناف ومربعات التحديد المباشرة", value=True
-      )
+      show_details = st.checkbox("تفعيل عرض الأصناف ومربعات التحديد", value=True)
       st.markdown("</div>", unsafe_allow_html=True)
 
       selected_item_rows = []
@@ -369,7 +376,6 @@ if data_loaded:
               .reset_index()
           )
 
-          # تقسيم الشاشة: جدول الأصناف (يسار) ومربعات الإجماليات المتحركة بجوارها مباشرة (يمين)
           col_items_list, col_live_metrics = st.columns([2.3, 1])
 
           with col_items_list:
@@ -410,12 +416,11 @@ if data_loaded:
                 selected_item_rows.append(item_name)
             st.markdown("</div>", unsafe_allow_html=True)
 
-          # تحديث الداتا بناءً على الأصناف المحددة
           final_selected_df = filtered_df[
               filtered_df[desc_col].astype(str).isin(selected_item_rows)
           ]
 
-          # --- الإجماليات المتحركة بجوار الأصناف مباشرة (تتحرك معها) ---
+          # --- الإجماليات المتحركة بجوار الأصناف مباشرة ---
           with col_live_metrics:
             st.markdown(
                 "#### 📊 الإجمالي المعتمد المباشر", unsafe_allow_html=True
@@ -440,7 +445,6 @@ if data_loaded:
         else:
           st.dataframe(filtered_df, use_container_width=True)
       else:
-        # لو مش مفعل التفاصيل، نعرض كروت الإجماليات داخل كارت
         st.markdown('<div class="content-card">', unsafe_allow_html=True)
         st.markdown(
             f"### 📌 الإجمالي العام للقطاع للموردين: `"
@@ -465,7 +469,7 @@ if data_loaded:
           m3.metric("💰 إجمالي المبيعات", f"{total_sales_val:,.2f}")
         st.markdown("</div>", unsafe_allow_html=True)
 
-      # --- قسم إرسال البريد الإلكتروني عبر Gmail داخل كارت ---
+      # --- كارت إرسال البريد الإلكتروني عبر Gmail ---
       st.markdown('<div class="content-card">', unsafe_allow_html=True)
       st.markdown(
           "<h3 style='color: #1f3bb3;'>✉️ إرسال اعتماد المراجعة عبر البريد"
